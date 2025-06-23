@@ -699,7 +699,7 @@ with st.container():
             )
             total_institutions = (
                 filtered_df["institution_name"].nunique()
-                if "institution_name" in filtered_df.columns and not filtered_df["institution_name"].isna().all()
+                if "institution_name" in filtered_df.columns and not filtered_df["institution_name"].isna().all() and not filtered_df.empty
                 else 0
             )
             total_programmes = (
