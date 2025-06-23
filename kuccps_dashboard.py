@@ -422,7 +422,7 @@ with st.container():
 
     # ========== Chart 3: Student Count per Programme (Enhanced) ==========
     st.subheader("📚 Student Count per Programme")
-    if "programme_name" in filtered_df.columns and "number_student_id" in filtered_df.columns:
+    if uploaded_file is not None and "programme_name" in filtered_df.columns and "number_student_id" in filtered_df.columns:
         # Group by programme and department for richer context
         student_counts = (
             filtered_df.groupby(["department", "programme_name"])["number_student_id"]
@@ -502,7 +502,7 @@ with st.container():
 
     # ========== Chart 4: Application Trend ==========
     st.subheader("📈 Application Trend by Day")
-    if "application_day" in filtered_df.columns and not filtered_df["application_day"].isna().all():
+    if 'filtered_df' in locals() and "application_day" in filtered_df.columns and not filtered_df["application_day"].isna().all():
         # Group by application_day and optionally by department for richer insights
         trend_group = st.radio(
             "Group Application Trend By:",
