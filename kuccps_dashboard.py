@@ -98,8 +98,11 @@ if uploaded_file is not None:
         st.plotly_chart(fig1, use_container_width=True)
 
         # Download button for Chart 1
-        img_bytes1 = pio.to_image(fig1, format="png", engine="kaleido")
-        st.download_button("📥 Download Programme Breakdown", img_bytes1, "programme_pie.png", "image/png")
+        try:
+            img_bytes1 = pio.to_image(fig1, format="png", engine="kaleido")
+            st.download_button("📥 Download Programme Breakdown", img_bytes1, "programme_pie.png", "image/png")
+        except Exception as e:
+            st.warning("⚠️ Unable to export image. Please ensure 'kaleido' is installed and available.")
     else:
         st.warning("⚠️ 'programme_name' column not found.")
 
@@ -117,13 +120,15 @@ if uploaded_file is not None:
             text="count",
             color_discrete_sequence=px.colors.qualitative.Safe,
         )
-        fig2.update_layout(xaxis_title="Institution Type", yaxis_title="Number of Institutions")
-        st.plotly_chart(fig2, use_container_width=True)
-
         # Download button for Chart 2
-        img_bytes2 = pio.to_image(fig2, format="png", engine="kaleido")
-        st.download_button("📥 Download Institution Sponsorship Chart", img_bytes2, "institution_sponsorship.png", "image/png")
+        try:
+            img_bytes2 = pio.to_image(fig2, format="png", engine="kaleido")
+            st.download_button("📥 Download Institution Sponsorship Chart", img_bytes2, "institution_sponsorship.png", "image/png")
+        except Exception as e:
+            st.warning("⚠️ Unable to export image. Please ensure 'kaleido' is installed and available.")
     else:
+        st.warning("⚠️ 'institution_sponsor_id' column not found.")
+        st.download_button("📥 Download Institution Sponsorship Chart", img_bytes2, "institution_sponsorship.png", "image/png")
         st.warning("⚠️ 'institution_sponsor_id' column not found.")
 
     # ========== Chart 3: Student Count per Programme ==========
@@ -142,14 +147,16 @@ if uploaded_file is not None:
         )
         fig3.update_layout(
             xaxis_title="Programme Name",
-            yaxis_title="Total Students",
+            yaxis_title="Number of Students",
             showlegend=False
         )
         st.plotly_chart(fig3, use_container_width=True)
-
         # Download button for Chart 3
-        img_bytes3 = pio.to_image(fig3, format="png", engine="kaleido")
-        st.download_button("📥 Download Student Count Chart", img_bytes3, "student_count_per_programme.png", "image/png")
+        try:
+            img_bytes3 = pio.to_image(fig3, format="png", engine="kaleido")
+            st.download_button("📥 Download Student Count Chart", img_bytes3, "student_count_per_programme.png", "image/png")
+        except Exception as e:
+            st.warning("⚠️ Unable to export image. Please ensure 'kaleido' is installed and available.")
     else:
         st.warning("⚠️ Required columns missing.")
 
@@ -164,14 +171,15 @@ if uploaded_file is not None:
             x="application_day",
             y="count",
             markers=True,
-            title="Application Submissions Over Days",
             labels={"application_day": "Application Day", "count": "Number of Applications"},
         )
         st.plotly_chart(fig4, use_container_width=True)
-
         # Download button for Chart 4
-        img_bytes4 = pio.to_image(fig4, format="png", engine="kaleido")
-        st.download_button("📥 Download Application Trend Chart", img_bytes4, "application_trend.png", "image/png")
+        try:
+            img_bytes4 = pio.to_image(fig4, format="png", engine="kaleido")
+            st.download_button("📥 Download Application Trend Chart", img_bytes4, "application_trend.png", "image/png")
+        except Exception as e:
+            st.warning("⚠️ Unable to export image. Please ensure 'kaleido' is installed and available.")
     else:
         st.warning("⚠️ 'application_day' column not found.")
 
@@ -246,7 +254,6 @@ if uploaded_file is not None:
             grade_counts,
             x="mean_grade_id",
             y="count",
-            color="mean_grade_id",
             text="count",
             color_discrete_sequence=px.colors.qualitative.Pastel
         )
@@ -256,10 +263,12 @@ if uploaded_file is not None:
             showlegend=False
         )
         st.plotly_chart(fig5, use_container_width=True)
-
         # Download button for Chart 5
-        img_bytes5 = pio.to_image(fig5, format="png", engine="kaleido")
-        st.download_button("📥 Download Mean Grade Chart", img_bytes5, "mean_grade_distribution.png", "image/png")
+        try:
+            img_bytes5 = pio.to_image(fig5, format="png", engine="kaleido")
+            st.download_button("📥 Download Mean Grade Chart", img_bytes5, "mean_grade_distribution.png", "image/png")
+        except Exception as e:
+            st.warning("⚠️ Unable to export image. Please ensure 'kaleido' is installed and available.")
     else:
         st.warning("⚠️ 'mean_grade_id' column not found.")
 
@@ -273,7 +282,6 @@ if uploaded_file is not None:
             cycle_counts,
             x="placement_cycle_id",
             y="count",
-            color="placement_cycle_id",
             text="count",
             color_discrete_sequence=px.colors.qualitative.Prism
         )
@@ -285,8 +293,11 @@ if uploaded_file is not None:
         st.plotly_chart(fig6, use_container_width=True)
 
         # Download button for Chart 6
-        img_bytes6 = pio.to_image(fig6, format="png", engine="kaleido")
-        st.download_button("📥 Download Placement Cycle Chart", img_bytes6, "applications_by_placement_cycle.png", "image/png")
+        try:
+            img_bytes6 = pio.to_image(fig6, format="png", engine="kaleido")
+            st.download_button("📥 Download Placement Cycle Chart", img_bytes6, "applications_by_placement_cycle.png", "image/png")
+        except Exception as e:
+            st.warning("⚠️ Unable to export image. Please ensure 'kaleido' is installed and available.")
     else:
         st.warning("⚠️ 'placement_cycle_id' column not found.")
 
@@ -300,7 +311,6 @@ if uploaded_file is not None:
             .sort_values(by="number_student_id", ascending=False)
             .head(10)
         )
-
         fig7 = px.bar(
             top_institutions,
             x="institution_name",
@@ -315,10 +325,12 @@ if uploaded_file is not None:
             showlegend=False
         )
         st.plotly_chart(fig7, use_container_width=True)
-
         # Download button for Chart 7
-        img_bytes7 = pio.to_image(fig7, format="png", engine="kaleido")
-        st.download_button("📥 Download Top Institutions Chart", img_bytes7, "top_10_institutions.png", "image/png")
+        try:
+            img_bytes7 = pio.to_image(fig7, format="png", engine="kaleido")
+            st.download_button("📥 Download Top Institutions Chart", img_bytes7, "top_10_institutions.png", "image/png")
+        except Exception as e:
+            st.warning("⚠️ Unable to export image. Please ensure 'kaleido' is installed and available.")
     else:
         st.warning("⚠️ Required columns for institution chart are missing.")
 
