@@ -870,23 +870,31 @@ with st.container():
 
     # ===== Additional Visualizations =====
 
-    # Chart 5: Mean Grade Distribution (Enhanced)
-    st.subheader("🎯 Mean Grade Distribution")
+    # Chart 5: Mean Grade Distribution (Advanced)
+    st.subheader("🎯 Mean Grade Distribution & Insights")
     if 'filtered_df' in locals() and "mean_grade_id" in filtered_df.columns and not filtered_df["mean_grade_id"].isna().all():
         chart_type = st.radio(
             "Select Chart Type for Mean Grade Distribution:",
-            options=["Bar", "Pie"],
+            options=["Bar", "Pie", "Boxplot"],
             horizontal=True,
             key="mean_grade_chart_type"
         )
 
+        # Prepare grade counts and order grades if possible
         grade_counts = (
             filtered_df["mean_grade_id"]
             .value_counts(dropna=False)
-            .sort_index()
             .reset_index()
-            .rename(columns={"index": "mean_grade_id", "mean_grade_id": "count"})
         )
+        grade_counts.columns = ["mean_grade_id", "count"]
+
+        # Try to order grades if they are standard (A, A-, B+, ...)
+        grade_order = [
+            "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "E"
+        ]
+        if set(grade_counts["mean_grade_id"]).issubset(set(grade_order)):
+            grade_counts["mean_grade_id"] = pd.Categorical(grade_counts["mean_grade_id"], categories=grade_order, ordered=True)
+            grade_counts = grade_counts.sort_values("mean_grade_id")
 
         show_percentage = st.checkbox("Show as Percentage", value=False, key="mean_grade_percentage")
         if show_percentage:
@@ -899,6 +907,7 @@ with st.container():
                 x="mean_grade_id",
                 y="count" if not show_percentage else "percentage",
                 text="count" if not show_percentage else "percentage",
+                color="mean_grade_id",
                 color_discrete_sequence=px.colors.qualitative.Pastel
             )
             fig5.update_layout(
@@ -911,7 +920,7 @@ with st.container():
                 textposition='outside'
             )
             st.plotly_chart(fig5, use_container_width=True)
-        else:
+        elif chart_type == "Pie":
             fig5 = px.pie(
                 grade_counts,
                 names="mean_grade_id",
@@ -920,10 +929,44 @@ with st.container():
                 color_discrete_sequence=px.colors.sequential.Pastel
             )
             fig5.update_traces(
-                textinfo="percent+label" if not show_percentage else "label+value",
+            textinfo="percent+label" if not show_percentage else "label+value",
                 pull=[0.05]*len(grade_counts)
             )
             st.plotly_chart(fig5, use_container_width=True)
+        else:  # Boxplot
+            # If grades are ordinal, map to numeric for boxplot
+            grade_map = {g: i for i, g in enumerate(grade_order)}
+            if set(filtered_df["mean_grade_id"].dropna()).issubset(set(grade_order)):
+                filtered_df["mean_grade_numeric"] = filtered_df["mean_grade_id"].map(grade_map)
+                fig5 = px.box(
+                    filtered_df,
+                    y="mean_grade_numeric",
+                    points="all",
+                    labels={"mean_grade_numeric": "Mean Grade (Ordinal)"},
+                    color_discrete_sequence=["#636EFA"]
+                )
+                fig5.update_yaxes(
+                    tickvals=list(range(len(grade_order))),
+                    ticktext=grade_order,
+                    title="Mean Grade"
+                )
+                fig5.update_layout(
+                    yaxis_title="Mean Grade",
+                    showlegend=False,
+                    height=400
+                )
+                st.plotly_chart(fig5, use_container_width=True)
+            else:
+                st.info("Boxplot is only available for standard mean grades (A, A-, B+, ...).")
+
+        # Show summary stats
+        st.markdown("#### 📊 Mean Grade Summary")
+        col1, col2, col3 = st.columns(3)
+        mode_grade = filtered_df["mean_grade_id"].mode().iloc[0] if not filtered_df["mean_grade_id"].mode().empty else "N/A"
+        col1.metric("Most Common Grade", mode_grade)
+        col2.metric("Unique Grades", filtered_df["mean_grade_id"].nunique())
+        top_grades = grade_counts.head(3)[["mean_grade_id", "count"]].values.tolist()
+        col3.markdown("**Top 3 Grades:**<br>" + "<br>".join([f"{g} ({c:,})" for g, c in top_grades]), unsafe_allow_html=True)
 
         st.markdown("#### 📋 Mean Grade Distribution Table")
         st.dataframe(grade_counts, use_container_width=True)
@@ -1013,46 +1056,75 @@ with st.container():
     else:
         st.warning("⚠️ 'placement_cycle_id' column not found or contains only missing values.")
 
-    # Chart 7: Top Institutions by Student Count (Enhanced)
+    # Chart 7: Top Institutions by Student Count (Advanced)
     st.subheader("🏆 Top Institutions by Student Count")
-    if 'filtered_df' in locals() and "institution_name" in filtered_df.columns and "number_student_id" in filtered_df.columns and not filtered_df["institution_name"].isna().all():
-        max_top_n = min(30, filtered_df["institution_name"].nunique())
+    if (
+        'filtered_df' in locals()
+        and "institution_name" in filtered_df.columns
+        and "number_student_id" in filtered_df.columns
+        and not filtered_df["institution_name"].isna().all()
+    ):
+        max_top_n = min(50, filtered_df["institution_name"].nunique())
         top_n_institutions = st.slider(
             "Show Top N Institutions (by student count)",
             min_value=3,
             max_value=max_top_n if max_top_n >= 3 else 3,
-            value=min(10, max_top_n),
+            value=min(15, max_top_n),
             step=1,
             key="top_n_institutions"
         )
-        top_institutions = (
-            filtered_df.groupby("institution_name")["number_student_id"]
-            .nunique()
-            .reset_index()
-            .rename(columns={"number_student_id": "student_count"})
-            .sort_values(by="student_count", ascending=False)
-            .head(top_n_institutions)
+        # Option to aggregate by unique students or total applications
+        agg_mode = st.radio(
+            "Aggregate By:",
+            options=["Unique Students", "Total Applications"],
+            horizontal=True,
+            key="institution_agg_mode"
         )
+        if agg_mode == "Unique Students":
+            top_institutions = (
+                filtered_df.groupby("institution_name")["number_student_id"]
+                .nunique()
+                .reset_index()
+                .rename(columns={"number_student_id": "student_count"})
+                .sort_values(by="student_count", ascending=False)
+                .head(top_n_institutions)
+            )
+        else:
+            top_institutions = (
+                filtered_df.groupby("institution_name")["number_student_id"]
+                .count()
+                .reset_index()
+                .rename(columns={"number_student_id": "application_count"})
+                .sort_values(by="application_count", ascending=False)
+                .head(top_n_institutions)
+            )
         show_dept_breakdown = st.checkbox("Show Department Breakdown", value=False, key="inst_dept_breakdown")
         if show_dept_breakdown and "department" in filtered_df.columns:
             inst_dept_counts = (
                 filtered_df[filtered_df["institution_name"].isin(top_institutions["institution_name"])]
+                .groupby(["institution_name", "department"])[
+                    "number_student_id" if agg_mode == "Unique Students" else "number_student_id"
+                ]
+                .nunique() if agg_mode == "Unique Students" else
+                filtered_df[filtered_df["institution_name"].isin(top_institutions["institution_name"])]
                 .groupby(["institution_name", "department"])["number_student_id"]
-                .nunique()
-                .reset_index()
-                .rename(columns={"number_student_id": "student_count"})
+                .count()
             )
+            inst_dept_counts = inst_dept_counts.reset_index().rename(
+                columns={"number_student_id": "student_count"} if agg_mode == "Unique Students" else {"number_student_id": "application_count"}
+            )
+            y_col = "student_count" if agg_mode == "Unique Students" else "application_count"
             fig7 = px.bar(
                 inst_dept_counts,
                 x="institution_name",
-                y="student_count",
+                y=y_col,
                 color="department",
-                text="student_count",
+                text=y_col,
                 color_discrete_sequence=px.colors.qualitative.Bold,
             )
             fig7.update_layout(
                 xaxis_title="Institution Name",
-                yaxis_title="Student Count",
+                yaxis_title="Student Count" if agg_mode == "Unique Students" else "Application Count",
                 barmode="stack",
                 legend_title_text="Department",
                 xaxis_tickangle=-30,
@@ -1061,17 +1133,18 @@ with st.container():
             )
             fig7.update_traces(texttemplate='%{text:,}', textposition='outside')
         else:
+            y_col = "student_count" if agg_mode == "Unique Students" else "application_count"
             fig7 = px.bar(
                 top_institutions,
                 x="institution_name",
-                y="student_count",
+                y=y_col,
                 color="institution_name",
-                text="student_count",
+                text=y_col,
                 color_discrete_sequence=px.colors.qualitative.Bold
             )
             fig7.update_layout(
                 xaxis_title="Institution Name",
-                yaxis_title="Student Count",
+                yaxis_title="Student Count" if agg_mode == "Unique Students" else "Application Count",
                 showlegend=False,
                 xaxis_tickangle=-30,
                 margin=dict(b=120),
@@ -1081,6 +1154,7 @@ with st.container():
         st.plotly_chart(fig7, use_container_width=True)
         st.markdown("#### 📋 Top Institutions Table")
         st.dataframe(top_institutions, use_container_width=True)
+        # Add download for both CSV and HTML
         try:
             img_html7 = pio.to_html(fig7, full_html=False, include_plotlyjs='cdn')
             st.download_button(
@@ -1088,6 +1162,13 @@ with st.container():
                 img_html7,
                 "top_institutions.html",
                 "text/html"
+            )
+            csv_inst = top_institutions.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                "⬇️ Download Top Institutions Table (CSV)",
+                csv_inst,
+                "top_institutions.csv",
+                "text/csv"
             )
             st.info("PNG export requires 'kaleido', which may not work on Streamlit Cloud. Use the HTML download instead.")
         except Exception as e:
