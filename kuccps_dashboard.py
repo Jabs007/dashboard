@@ -13,41 +13,37 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for better visuals
+# Custom CSS for better visuals (targeting stable selectors)
 st.markdown("""
     <style>
-        .css-18e3th9 { padding-top: 1.5rem; }
-        .css-1d391kg { padding-top: 1.5rem; }
-        .css-1v0mbdj { padding-top: 1.5rem; }
-        .css-1cpxqw2 { padding-top: 1.5rem; }
-        .css-1kyxreq { padding-top: 1.5rem; }
-        .css-1dp5vir { padding-top: 1.5rem; }
-        .css-1v0mbdj { padding-top: 1.5rem; }
-        .css-1cpxqw2 { padding-top: 1.5rem; }
-        .css-1kyxreq { padding-top: 1.5rem; }
-        .css-1dp5vir { padding-top: 1.5rem; }
-        .stButton>button {
+        /* Padding for main container */
+        section.main > div { padding-top: 1.5rem !important; }
+        /* Button styles */
+        .stButton > button {
             color: white;
-            background: #2b5876;
             background: linear-gradient(90deg, #4e4376 0%, #2b5876 100%);
             border-radius: 8px;
             border: none;
             padding: 0.5em 1.5em;
             font-weight: 600;
         }
-        .stDownloadButton>button {
+        .stDownloadButton > button {
             color: white;
-            background: #11998e;
             background: linear-gradient(90deg, #38ef7d 0%, #11998e 100%);
             border-radius: 8px;
             border: none;
             padding: 0.5em 1.5em;
             font-weight: 600;
         }
+        /* Radio buttons horizontal */
         .stRadio > div { flex-direction: row; }
+        /* Checkbox label bold */
         .stCheckbox > label { font-weight: 500; }
+        /* Slider color */
         .stSlider > div { color: #2b5876; }
+        /* DataFrame background */
         .stDataFrame { background: #f8fafc; }
+        /* Metric background */
         .stMetric { background: #f0f4f8; border-radius: 8px; }
     </style>
 """, unsafe_allow_html=True)
@@ -56,12 +52,13 @@ st.markdown("""
 st.title("📊 KUCCPS INTERACTIVE DASHBOARD")
 st.caption("Empowering supervisors, analysts, and stakeholders to explore and analyze KUCCPS application data interactively.")
 
-# ===== File Upload Section (Enhanced) =====
+# ===== File Upload Section (Enhanced & Improved) =====
 st.markdown("### 📂 Upload Your KUCCPS Dataset")
 with st.container():
     uploaded_file = st.file_uploader(
-        "Upload a KUCCPS dataset (CSV or Excel)", 
+        "Upload a KUCCPS dataset (CSV or Excel)",
         type=["csv", "xlsx"],
+        accept_multiple_files=False,
         help="Accepted formats: .csv, .xlsx. For best results, ensure your file includes columns like 'programme_name', 'institution_name', 'mean_grade_id', etc."
     )
     st.caption(
@@ -72,39 +69,47 @@ with st.container():
         <small>
         <ul>
             <li>Large files may take a few seconds to load.</li>
-            <li>All processing is done locally in your browser session for privacy.</li>
+            <li>All processing is done securely on the server; your data is not shared.</li>
+            <li>Supported Excel files: .xlsx only (not .xls).</li>
+            <li>For best results, ensure your file has clear headers and no merged cells.</li>
         </ul>
         </small>
         """, unsafe_allow_html=True
     )
+    if uploaded_file is None:
+        st.info("Please upload a CSV or Excel file to unlock dashboard features.")
     # ===== Data Loading, Cleaning, and Filtering Section (Enhanced) =====
 
-    # Improved department categorization with more keywords and flexibility
+    # Enhanced department categorization with improved keyword matching and robustness
     def categorize_programme(programme_name):
         if pd.isna(programme_name):
             return "Other"
-        name = programme_name.lower()
+        name = str(programme_name).lower()
         mapping = [
-            (["nursing", "medicine", "surgery", "clinical", "physiotherapy", "pharmacy", "dental", "public health", "medical", "nutrition", "biomedical"], "Health Sciences"),
-            (["engineering", "civil", "mechanical", "electrical", "mechatronic", "telecom", "automotive", "chemical", "mining", "manufacturing"], "Engineering"),
-            (["computer", "ict", "information technology", "cloud", "software", "data science", "ai", "cyber", "informatics", "it"], "ICT / Tech"),
-            (["commerce", "business", "accounting", "procurement", "finance", "marketing", "management", "entrepreneurship", "economics"], "Business"),
-            (["law", "criminology", "justice", "legal"], "Law & Humanities"),
-            (["education", "teaching", "pedagogy", "curriculum", "teacher"], "Education"),
-            (["agric", "horticulture", "animal", "crop", "food science", "agribusiness", "soil", "dairy", "veterinary"], "Agriculture"),
-            (["tourism", "hospitality", "hotel", "leisure", "travel"], "Hospitality & Tourism"),
-            (["architecture", "planning", "urban", "landscape", "built environment"], "Architecture & Planning"),
-            (["statistics", "mathematics", "math", "actuarial", "quantitative"], "Math & Science"),
-            (["science", "biology", "chemistry", "physics", "biochemistry", "microbiology", "zoology", "botany", "geology", "environmental"], "Pure & Applied Sciences"),
-            (["arts", "music", "fine art", "design", "drama", "theatre", "literature", "philosophy", "history", "language", "linguistics", "communication", "media"], "Arts & Humanities"),
-            (["social work", "sociology", "psychology", "community", "development", "anthropology", "counseling"], "Social Sciences"),
-            (["sports", "physical education", "recreation"], "Sports & Recreation"),
-            (["aviation", "aeronautical", "pilot"], "Aviation"),
-            (["marine", "maritime", "ocean", "fisheries"], "Marine & Fisheries"),
-            (["library", "records", "information science"], "Library & Information Science"),
-            (["logistics", "supply chain", "transport", "shipping"], "Logistics & Transport"),
-            (["fashion", "textile", "garment"], "Fashion & Textile"),
-            (["journalism", "mass communication", "broadcast"], "Media & Communication"),
+            (["nursing", "medicine", "surgery", "clinical", "physiotherapy", "pharmacy", "dental", "public health", "medical", "nutrition", "biomedical", "anatomy", "physiology", "radiology", "midwifery"], "Health Sciences"),
+            (["engineering", "civil", "mechanical", "electrical", "mechatronic", "telecom", "automotive", "chemical", "mining", "manufacturing", "industrial", "aerospace", "petroleum", "energy", "environmental engineering"], "Engineering"),
+            (["computer", "ict", "information technology", "cloud", "software", "data science", "ai", "cyber", "informatics", "it", "computing", "machine learning", "robotics", "network"], "ICT / Tech"),
+            (["commerce", "business", "accounting", "procurement", "finance", "marketing", "management", "entrepreneurship", "economics", "human resource", "insurance", "banking", "audit", "supply chain"], "Business"),
+            (["law", "criminology", "justice", "legal", "forensic"], "Law & Humanities"),
+            (["education", "teaching", "pedagogy", "curriculum", "teacher", "instructional", "educational"], "Education"),
+            (["agric", "horticulture", "animal", "crop", "food science", "agribusiness", "soil", "dairy", "veterinary", "forestry", "fisheries", "plant", "agronomy"], "Agriculture"),
+            (["tourism", "hospitality", "hotel", "leisure", "travel", "event management", "culinary"], "Hospitality & Tourism"),
+            (["architecture", "planning", "urban", "landscape", "built environment", "construction", "quantity survey", "interior design"], "Architecture & Planning"),
+            (["statistics", "mathematics", "math", "actuarial", "quantitative", "applied math", "statistical"], "Math & Statistics"),
+            (["science", "biology", "chemistry", "physics", "biochemistry", "microbiology", "zoology", "botany", "geology", "environmental", "ecology", "genetics", "astronomy", "marine science"], "Pure & Applied Sciences"),
+            (["arts", "music", "fine art", "design", "drama", "theatre", "literature", "philosophy", "history", "language", "linguistics", "communication", "media", "film", "animation", "creative"], "Arts & Humanities"),
+            (["social work", "sociology", "psychology", "community", "development", "anthropology", "counseling", "public administration", "international relations", "political science"], "Social Sciences"),
+            (["sports", "physical education", "recreation", "exercise", "fitness", "sport"], "Sports & Recreation"),
+            (["aviation", "aeronautical", "pilot", "aircraft", "flight"], "Aviation"),
+            (["marine", "maritime", "ocean", "fisheries", "aquatic", "naval"], "Marine & Fisheries"),
+            (["library", "records", "information science", "archival", "documentation"], "Library & Information Science"),
+            (["logistics", "supply chain", "transport", "shipping", "freight", "warehousing"], "Logistics & Transport"),
+            (["fashion", "textile", "garment", "apparel", "clothing", "costume"], "Fashion & Textile"),
+            (["journalism", "mass communication", "broadcast", "public relations", "media studies"], "Media & Communication"),
+            (["real estate", "property", "land management", "valuation"], "Real Estate & Land Management"),
+            (["military", "defense", "security", "peace studies"], "Security & Defense"),
+            (["environment", "conservation", "sustainability", "climate"], "Environmental Studies"),
+            (["food", "nutrition", "dietetics", "culinary"], "Food & Nutrition"),
         ]
         for keywords, dept in mapping:
             if any(k in name for k in keywords):
@@ -112,12 +117,32 @@ with st.container():
         return "Other"
 
     if uploaded_file is not None:
-        # Load file with error handling and preview
+        # Load file with robust error handling and preview
         try:
-            if uploaded_file.name.endswith(".csv"):
-                df = pd.read_csv(uploaded_file)
-            else:
+            # Support both CSV and Excel, handle encoding issues
+            if uploaded_file.name.lower().endswith(".csv"):
+                # Try utf-8, fallback to ISO-8859-1 if needed
+                try:
+                    df = pd.read_csv(uploaded_file, encoding="utf-8")
+                except UnicodeDecodeError:
+                    uploaded_file.seek(0)
+                    df = pd.read_csv(uploaded_file, encoding="ISO-8859-1")
+            elif uploaded_file.name.lower().endswith(".xlsx"):
                 df = pd.read_excel(uploaded_file, engine="openpyxl")
+            else:
+                st.error("Unsupported file format. Please upload a CSV or .xlsx Excel file.")
+                st.stop()
+            # Check for empty file
+            if df.empty:
+                st.error("The uploaded file is empty. Please check your data and try again.")
+                st.stop()
+            # Check for minimum required columns
+            required_cols = {"programme_name", "institution_name", "number_student_id"}
+            if not required_cols.intersection(set(df.columns)):
+                st.warning(
+                    f"Warning: The uploaded file does not contain any of the required columns: {', '.join(required_cols)}. "
+                    "Some dashboard features may not work as expected."
+                )
         except Exception as e:
             st.error(f"❌ Error loading file: {e}")
             st.stop()
@@ -134,11 +159,14 @@ with st.container():
         # Convert 'application_day' like 'Day 1' → 1 (int)
         if "application_day" in df.columns:
             df["application_day"] = (
-                df["application_day"]
-                .astype(str)
-                .str.extract(r'(\d+)')
-                .astype(float)
+            df["application_day"]
+            .astype(str)
+            .str.extract(r'(\d+)')
+            .astype(float)
             )
+            # If all values are integers, cast to int for cleaner display
+            if df["application_day"].dropna().apply(float.is_integer).all():
+                df["application_day"] = df["application_day"].astype("Int64")
 
         # Categorize programmes into departments (robust to missing column)
         if "programme_name" in df.columns:
@@ -146,52 +174,87 @@ with st.container():
         else:
             df["department"] = "Other"
 
+        # Remove duplicate rows if all columns are identical (optional, for cleaner data)
+        df = df.drop_duplicates()
+
+        # Show info about missing values
+        missing_info = df.isnull().sum()
+        missing_cols = missing_info[missing_info > 0]
+        if not missing_cols.empty:
+            st.warning(
+            f"Columns with missing values: {', '.join(missing_cols.index)}. "
+            "Consider cleaning your data for best results."
+            )
+
         st.success("✅ File loaded successfully!")
         st.subheader("🔍 Data Preview")
         st.dataframe(df.head(20), use_container_width=True)
 
-        # ========== Sidebar Filters (Enhanced) ==========
+        # ========== Sidebar Filters (Enhanced & Robust) ==========
         st.sidebar.header("🔎 Filter Data")
 
-        def sidebar_multiselect(label, col, default_all=True):
+        def sidebar_multiselect(label, col, default_all=True, help_text=None):
+            """Reusable multiselect with graceful fallback if column missing."""
             if col in df.columns:
-                options = sorted(df[col].dropna().unique())
+                options = sorted([str(x) for x in df[col].dropna().unique()])
                 default = options if default_all else []
-                return st.sidebar.multiselect(label, options=options, default=default)
+                return st.sidebar.multiselect(label, options=options, default=default, help=help_text)
             return []
 
-        selected_sponsors = sidebar_multiselect("Select Institution Sponsor", "institution_sponsor_id")
-        selected_stages = sidebar_multiselect("Select Application Stage", "application_stage_id")
-        selected_types = sidebar_multiselect("Select Programme Type", "programme_type_id")
-        selected_programmes = sidebar_multiselect("Select Programme Name", "programme_name")
-        selected_institutions = sidebar_multiselect("Select Institution Name", "institution_name")
-        selected_grades = sidebar_multiselect("Select Mean Grade", "mean_grade_id")
-        selected_cycles = sidebar_multiselect("Select Placement Cycle", "placement_cycle_id")
-        selected_departments = sidebar_multiselect("Select Department", "department")
+        selected_sponsors = sidebar_multiselect(
+            "Institution Sponsor", "institution_sponsor_id", help_text="Filter by sponsoring body (public/private)"
+        )
+        selected_stages = sidebar_multiselect(
+            "Application Stage", "application_stage_id", help_text="Filter by stage of application process"
+        )
+        selected_types = sidebar_multiselect(
+            "Programme Type", "programme_type_id", help_text="Filter by type of programme (degree, diploma, etc.)"
+        )
+        selected_programmes = sidebar_multiselect(
+            "Programme Name", "programme_name", default_all=False, help_text="Select specific academic programmes"
+        )
+        selected_institutions = sidebar_multiselect(
+            "Institution Name", "institution_name", default_all=False, help_text="Focus on one or more institutions"
+        )
+        selected_grades = sidebar_multiselect(
+            "Mean Grade", "mean_grade_id", help_text="Filter by applicant's mean grade"
+        )
+        selected_cycles = sidebar_multiselect(
+            "Placement Cycle", "placement_cycle_id", help_text="Filter by placement cycle"
+        )
+        selected_departments = sidebar_multiselect(
+            "Department", "department", help_text="Filter by programme department"
+        )
 
-        # ========== Apply Filters (Robust) ==========
+        # ========== Apply Filters (Robust & Null-safe) ==========
         filter_conditions = []
         if selected_sponsors:
-            filter_conditions.append(df["institution_sponsor_id"].isin(selected_sponsors))
+            filter_conditions.append(df["institution_sponsor_id"].astype(str).isin(selected_sponsors))
         if selected_stages:
-            filter_conditions.append(df["application_stage_id"].isin(selected_stages))
+            filter_conditions.append(df["application_stage_id"].astype(str).isin(selected_stages))
         if selected_types:
-            filter_conditions.append(df["programme_type_id"].isin(selected_types))
+            filter_conditions.append(df["programme_type_id"].astype(str).isin(selected_types))
         if selected_programmes:
-            filter_conditions.append(df["programme_name"].isin(selected_programmes))
+            filter_conditions.append(df["programme_name"].astype(str).isin(selected_programmes))
         if selected_institutions:
-            filter_conditions.append(df["institution_name"].isin(selected_institutions))
+            filter_conditions.append(df["institution_name"].astype(str).isin(selected_institutions))
         if selected_grades:
-            filter_conditions.append(df["mean_grade_id"].isin(selected_grades))
+            filter_conditions.append(df["mean_grade_id"].astype(str).isin(selected_grades))
         if selected_cycles:
-            filter_conditions.append(df["placement_cycle_id"].isin(selected_cycles))
+            filter_conditions.append(df["placement_cycle_id"].astype(str).isin(selected_cycles))
         if selected_departments:
-            filter_conditions.append(df["department"].isin(selected_departments))
+            filter_conditions.append(df["department"].astype(str).isin(selected_departments))
 
         if filter_conditions:
-            filtered_df = df[reduce(operator.and_, filter_conditions)]
+            filtered_df = df[reduce(operator.and_, filter_conditions)].copy()
         else:
             filtered_df = df.copy()
+
+        # Show quick filter summary in sidebar
+        st.sidebar.markdown(
+            f"<small><b>Rows after filtering:</b> {len(filtered_df):,}</small>",
+            unsafe_allow_html=True
+        )
 
     # ===== VISUALIZATIONS =====
     # ========== Chart 1: Programme Department Breakdown (Enhanced) ==========
@@ -208,14 +271,10 @@ with st.container():
 
         dept_counts = (
             filtered_df["department"]
-            .value_counts()
+            .value_counts(dropna=False)
             .reset_index()
             .rename(columns={"index": "department", "department": "count"})
         )
-        # Ensure unique column names (avoid duplicate 'department' column)
-        if dept_counts.columns.duplicated().any():
-            cols = pd.io.parsers.ParserBase({'names':dept_counts.columns})._maybe_dedup_names(dept_counts.columns)
-            dept_counts.columns = cols
 
         # Optionally, show as percentage
         show_dept_pct = st.checkbox("Show as Percentage (Department)", value=False, key="department_pct")
@@ -262,25 +321,25 @@ with st.container():
         # Show table of department counts
         st.markdown("#### 📋 Department Breakdown Table")
         st.dataframe(dept_counts, use_container_width=True)
-    else:
-        st.warning("⚠️ 'department' column not found.")
 
         # Download button for Chart 1 (using HTML export as fallback)
         try:
-            img_html1 = pio.to_html(fig1, full_html=False, include_plotlyjs='cdn') # type: ignore
+            img_html1 = pio.to_html(fig1, full_html=False, include_plotlyjs='cdn')
             st.download_button(
                 "📥 Download Programme Breakdown (HTML)", 
                 img_html1, 
-                "programme_pie.html", 
+                "programme_department_breakdown.html", 
                 "text/html"
             )
             st.info("PNG export requires 'kaleido', which may not work on Streamlit Cloud. Use the HTML download instead.")
         except Exception as e:
             st.warning("⚠️ Unable to export image. Please try downloading as HTML.")
+    else:
+        st.warning("⚠️ 'department' column not found.")
 
     # ========== Chart 2: Public vs Private ==========
     st.subheader("🏫 Institution Sponsorship Summary")
-    if "institution_sponsor_id" in filtered_df.columns:
+    if "institution_sponsor_id" in filtered_df.columns and "number_student_id" in filtered_df.columns:
         sponsor_counts = (
             filtered_df.groupby("institution_sponsor_id")["number_student_id"]
             .nunique()
@@ -289,31 +348,60 @@ with st.container():
             .sort_values(by="Unique Students", ascending=False)
         )
 
-        fig2 = px.bar(
-            sponsor_counts,
-            x="Sponsorship",
-            y="Unique Students",
-            color="Sponsorship",
-            text="Unique Students",
-            color_discrete_sequence=px.colors.qualitative.Safe,
+        # Optionally, show as percentage
+        show_sponsor_pct = st.checkbox("Show as Percentage (Sponsorship)", value=False, key="sponsor_pct")
+        if show_sponsor_pct:
+            total_sponsor = sponsor_counts["Unique Students"].sum()
+            sponsor_counts["percentage"] = (sponsor_counts["Unique Students"] / total_sponsor * 100).round(2)
+
+        chart2_type = st.radio(
+            "Select Chart Type for Sponsorship Breakdown:",
+            options=["Bar", "Pie"],
+            horizontal=True,
+            key="sponsor_chart_type"
         )
-        fig2.update_layout(
-            xaxis_title="Institution Sponsor",
-            yaxis_title="Number of Unique Students",
-            showlegend=False,
-            bargap=0.3,
-        )
-        fig2.update_traces(texttemplate='%{text:,}', textposition='outside')
+
+        if chart2_type == "Bar":
+            fig2 = px.bar(
+                sponsor_counts,
+                x="Sponsorship",
+                y="Unique Students" if not show_sponsor_pct else "percentage",
+                text="Unique Students" if not show_sponsor_pct else "percentage",
+                color="Sponsorship",
+                color_discrete_sequence=px.colors.qualitative.Safe,
+            )
+            fig2.update_layout(
+                xaxis_title="Institution Sponsor",
+                yaxis_title="Number of Unique Students" if not show_sponsor_pct else "Percentage (%)",
+                showlegend=False,
+                bargap=0.3,
+            )
+            fig2.update_traces(
+                texttemplate='%{text:,}' if not show_sponsor_pct else '%{text}%',
+                textposition='outside'
+            )
+        else:
+            fig2 = px.pie(
+                sponsor_counts,
+                names="Sponsorship",
+                values="Unique Students" if not show_sponsor_pct else "percentage",
+                hole=0.4,
+                color_discrete_sequence=px.colors.qualitative.Safe,
+            )
+            fig2.update_traces(
+                textinfo="percent+label" if not show_sponsor_pct else "label+value",
+                pull=[0.05]*len(sponsor_counts)
+            )
+
         st.plotly_chart(fig2, use_container_width=True)
 
         # Add a table for more detail
         st.markdown("#### 📋 Sponsorship Breakdown Table")
         st.dataframe(sponsor_counts, use_container_width=True)
-    else:
-        st.warning("⚠️ 'institution_sponsor_id' column not found.")
+
         # Download button for Chart 2 (using HTML export as fallback)
         try:
-            img_html2 = pio.to_html(fig1, full_html=False, include_plotlyjs='cdn')
+            img_html2 = pio.to_html(fig2, full_html=False, include_plotlyjs='cdn')
             st.download_button(
                 "📥 Download Institution Sponsorship Chart (HTML)", 
                 img_html2, 
@@ -323,14 +411,16 @@ with st.container():
             st.info("PNG export requires 'kaleido', which may not work on Streamlit Cloud. Use the HTML download instead.")
         except Exception as e:
             st.warning("⚠️ Unable to export image. Please try downloading as HTML.")
+    else:
+        st.warning("⚠️ 'institution_sponsor_id' or 'number_student_id' column not found.")
 
-    # ========== Chart 3: Student Count per Programme ==========
+    # ========== Chart 3: Student Count per Programme (Enhanced) ==========
     st.subheader("📚 Student Count per Programme")
     if "programme_name" in filtered_df.columns and "number_student_id" in filtered_df.columns:
         # Group by programme and department for richer context
         student_counts = (
             filtered_df.groupby(["department", "programme_name"])["number_student_id"]
-            .count()
+            .nunique()
             .reset_index()
             .rename(columns={"number_student_id": "student_count"})
         )
@@ -339,26 +429,44 @@ with st.container():
             by=["department", "student_count"], ascending=[True, False]
         )
 
-        # Optionally, allow user to select top N programmes to display
-        top_n = st.slider("Show Top N Programmes (by student count)", 5, 50, 20)
+        # Optionally, allow user to select top N programmes to display per department
+        max_top_n = min(50, student_counts.groupby("department")["programme_name"].count().max())
+        top_n = st.slider(
+            "Show Top N Programmes per Department (by unique student count)",
+            min_value=3,
+            max_value=max_top_n if max_top_n >= 3 else 3,
+            value=min(20, max_top_n),
+            step=1,
+            key="top_n_programmes_per_dept"
+        )
         top_programmes = (
-            student_counts.groupby("department")
-            .head(top_n)
+            student_counts.groupby("department", group_keys=False)
+            .apply(lambda x: x.nlargest(top_n, "student_count"))
             .reset_index(drop=True)
         )
 
+        # Allow user to filter by department for clarity
+        departments_available = sorted(top_programmes["department"].unique())
+        selected_depts = st.multiselect(
+            "Filter by Department (optional):",
+            options=departments_available,
+            default=departments_available,
+            key="programme_dept_filter"
+        )
+        filtered_top_programmes = top_programmes[top_programmes["department"].isin(selected_depts)]
+
         fig3 = px.bar(
-            top_programmes,
+            filtered_top_programmes,
             x="programme_name",
             y="student_count",
             color="department",
             text="student_count",
             color_discrete_sequence=px.colors.qualitative.Set2,
-            category_orders={"programme_name": top_programmes["programme_name"].tolist()},
+            category_orders={"programme_name": filtered_top_programmes["programme_name"].tolist()},
         )
         fig3.update_layout(
             xaxis_title="Programme Name",
-            yaxis_title="Number of Students",
+            yaxis_title="Number of Unique Students",
             showlegend=True,
             xaxis_tickangle=-45,
             margin=dict(b=150),
@@ -369,26 +477,26 @@ with st.container():
 
         # Add a table for more detail
         st.markdown("#### 📋 Student Count per Programme Table")
-        st.dataframe(top_programmes, use_container_width=True)
-    else:
-        st.warning("⚠️ Required columns for student count per programme are missing.")
-        # Download button for Chart 3 (HTML export as alternative to 'kaleido')
+        st.dataframe(filtered_top_programmes, use_container_width=True)
+
+        # Download button for Chart 3 (HTML export)
         try:
             img_html3 = pio.to_html(fig3, full_html=False, include_plotlyjs='cdn')
             st.download_button(
-            "📥 Download Student Count Chart (HTML)",
-            img_html3,
-            "student_count_per_programme.html",
-            "text/html"
+                "📥 Download Student Count per Programme Chart (HTML)",
+                img_html3,
+                "student_count_per_programme.html",
+                "text/html"
             )
             st.info("PNG export requires 'kaleido', which may not work on Streamlit Cloud. Use the HTML download instead.")
         except Exception as e:
             st.warning("⚠️ Unable to export image. Please try downloading as HTML.")
-        st.warning("⚠️ Required columns missing.")
+    else:
+        st.warning("⚠️ Required columns for student count per programme are missing.")
 
     # ========== Chart 4: Application Trend ==========
     st.subheader("📈 Application Trend by Day")
-    if "application_day" in filtered_df.columns:
+    if "application_day" in filtered_df.columns and not filtered_df["application_day"].isna().all():
         # Group by application_day and optionally by department for richer insights
         trend_group = st.radio(
             "Group Application Trend By:",
@@ -400,7 +508,7 @@ with st.container():
         if trend_group == "Department" and "department" in filtered_df.columns:
             day_dept_counts = (
                 filtered_df.groupby(["application_day", "department"])["number_student_id"]
-                .count()
+                .nunique()
                 .reset_index()
                 .rename(columns={"number_student_id": "count"})
             )
@@ -410,20 +518,20 @@ with st.container():
                 y="count",
                 color="department",
                 markers=True,
-                labels={"application_day": "Application Day", "count": "Number of Applications", "department": "Department"},
+                labels={"application_day": "Application Day", "count": "Number of Unique Applications", "department": "Department"},
                 color_discrete_sequence=px.colors.qualitative.Set1,
             )
             fig4.update_layout(
                 legend_title_text="Department",
                 xaxis=dict(dtick=1),
-                yaxis_title="Number of Applications",
+                yaxis_title="Number of Unique Applications",
                 xaxis_title="Application Day",
                 hovermode="x unified"
             )
         else:
             day_counts = (
                 filtered_df.groupby("application_day")["number_student_id"]
-                .count()
+                .nunique()
                 .reset_index()
                 .rename(columns={"number_student_id": "count"})
             )
@@ -432,12 +540,12 @@ with st.container():
                 x="application_day",
                 y="count",
                 markers=True,
-                labels={"application_day": "Application Day", "count": "Number of Applications"},
+                labels={"application_day": "Application Day", "count": "Number of Unique Applications"},
                 color_discrete_sequence=["#636EFA"],
             )
             fig4.update_layout(
                 xaxis=dict(dtick=1),
-                yaxis_title="Number of Applications",
+                yaxis_title="Number of Unique Applications",
                 xaxis_title="Application Day",
                 hovermode="x unified"
             )
@@ -457,9 +565,11 @@ with st.container():
         except Exception as e:
             st.warning("⚠️ Unable to export image. Please try downloading as HTML.")
     else:
-        st.warning("⚠️ 'application_day' column not found.")
+        st.warning("⚠️ 'application_day' column not found or contains only missing values.")
 
-    # ========== Application Day Filter ==========
+    # ========== Application Day Filter & Animated Programme Demand Chart ==========
+
+    # Application Day Filter (Sidebar)
     if "application_day" in df.columns and not df["application_day"].isna().all():
         st.sidebar.markdown("### ⏱️ Filter by Application Day")
         min_day = int(df["application_day"].min())
@@ -467,8 +577,8 @@ with st.container():
         # Show histogram for quick visual reference
         st.sidebar.plotly_chart(
             px.histogram(
-                df, 
-                x="application_day", 
+                df,
+                x="application_day",
                 nbins=(max_day - min_day + 1),
                 title="Application Day Distribution",
                 color_discrete_sequence=["#636EFA"]
@@ -489,12 +599,11 @@ with st.container():
         )
         # Apply day filter to filtered_df
         filtered_df = filtered_df[
-            (filtered_df["application_day"] >= selected_days[0]) & 
+            (filtered_df["application_day"] >= selected_days[0]) &
             (filtered_df["application_day"] <= selected_days[1])
         ]
         st.sidebar.info(f"Showing applications from Day {selected_days[0]} to Day {selected_days[1]}")
-    else:
-        st.sidebar.warning("No valid 'application_day' data available for filtering.")
+
         # ========== Enhanced Animated Chart: Programme Demand by Application Day ==========
         st.subheader("📊 Programme Demand by Application Day (Animated)")
 
@@ -503,14 +612,14 @@ with st.container():
             and "number_student_id" in filtered_df.columns
             and "application_day" in filtered_df.columns
             and not filtered_df["application_day"].isna().all()
+            and not filtered_df.empty
         ):
-            # Optionally, allow user to select top N programmes to animate
             st.markdown("**Tip:** Select fewer programmes in the sidebar for a clearer animation.")
             top_n_animated = st.slider(
                 "Show Top N Programmes (by total student count, for animation)",
                 min_value=3,
-                max_value=30,
-                value=10,
+                max_value=min(30, filtered_df["programme_name"].nunique()),
+                value=min(10, filtered_df["programme_name"].nunique()),
                 help="Limits the number of programmes shown in the animation for clarity."
             )
             # Get top N programmes by total student count
@@ -570,99 +679,119 @@ with st.container():
                 st.warning("⚠️ Unable to export animated chart. Please try downloading as HTML.")
         else:
             st.warning("⚠️ Required columns for animation are missing or no valid application day data.")
+    else:
+        st.sidebar.warning("No valid 'application_day' data available for filtering.")
+        # ========== 📌 Dynamic Summary KPIs (Enhanced & Improved) ==========
+        st.subheader("📌 Summary Insights (Filtered View)")
 
-    # ========== 📌 Dynamic Summary KPIs (Enhanced) ==========
-    st.subheader("📌 Summary Insights (Filtered View)")
+        # Robust KPI calculations with null/empty checks
+        total_students = (
+            filtered_df["number_student_id"].nunique()
+            if "number_student_id" in filtered_df.columns and not filtered_df["number_student_id"].isna().all()
+            else 0
+        )
+        total_institutions = (
+            filtered_df["institution_name"].nunique()
+            if "institution_name" in filtered_df.columns and not filtered_df["institution_name"].isna().all()
+            else 0
+        )
+        total_programmes = (
+            filtered_df["programme_name"].nunique()
+            if "programme_name" in filtered_df.columns and not filtered_df["programme_name"].isna().all()
+            else 0
+        )
+        top_day = (
+            f"Day {int(filtered_df['application_day'].mode()[0])}"
+            if "application_day" in filtered_df.columns and not filtered_df["application_day"].isna().all() and not filtered_df.empty
+            else "N/A"
+        )
+        top_department = (
+            filtered_df["department"].value_counts().idxmax()
+            if "department" in filtered_df.columns and not filtered_df["department"].isna().all() and not filtered_df.empty
+            else "N/A"
+        )
+        avg_students_per_programme = (
+            filtered_df.groupby("programme_name")["number_student_id"].nunique().mean()
+            if "programme_name" in filtered_df.columns and "number_student_id" in filtered_df.columns and not filtered_df.empty
+            else 0
+        )
+        top_institution = (
+            filtered_df["institution_name"].value_counts().idxmax()
+            if "institution_name" in filtered_df.columns and not filtered_df["institution_name"].isna().all() and not filtered_df.empty
+            else "N/A"
+        )
 
-    total_students = filtered_df["number_student_id"].nunique() if "number_student_id" in filtered_df.columns else 0
-    total_institutions = filtered_df["institution_name"].nunique() if "institution_name" in filtered_df.columns else 0
-    total_programmes = filtered_df["programme_name"].nunique() if "programme_name" in filtered_df.columns else 0
-    top_day = (
-        filtered_df["application_day"].mode()[0]
-        if "application_day" in filtered_df.columns and not filtered_df["application_day"].isna().all()
-        else "N/A"
-    )
-    top_department = (
-        filtered_df["department"].value_counts().idxmax()
-        if "department" in filtered_df.columns and not filtered_df["department"].isna().all() and not filtered_df.empty
-        else "N/A"
-    )
-    avg_students_per_programme = (
-        filtered_df.groupby("programme_name")["number_student_id"].nunique().mean()
-        if "programme_name" in filtered_df.columns and "number_student_id" in filtered_df.columns and not filtered_df.empty
-        else 0
-    )
-    top_institution = (
-        filtered_df["institution_name"].value_counts().idxmax()
-        if "institution_name" in filtered_df.columns and not filtered_df["institution_name"].isna().all() and not filtered_df.empty
-        else "N/A"
-    )
+        # Display KPIs in a visually appealing layout
+        col1, col2, col3, col4 = st.columns(4)
+        col1.metric("🎓 Students", f"{total_students:,}")
+        col2.metric("🏫 Institutions", f"{total_institutions:,}")
+        col3.metric("📚 Programmes", f"{total_programmes:,}")
+        col4.metric("📅 Most Active Day", top_day)
 
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("🎓 Students", f"{total_students:,}")
-    col2.metric("🏫 Institutions", f"{total_institutions:,}")
-    col3.metric("📚 Programmes", f"{total_programmes:,}")
-    col4.metric("📅 Most Active Day", f"Day {top_day}" if top_day != "N/A" else "N/A")
+        col5, col6, col7 = st.columns(3)
+        col5.metric("🏆 Top Department", f"{top_department}")
+        col6.metric("📈 Avg Students/Programme", f"{avg_students_per_programme:.1f}")
+        col7.metric("⭐ Top Institution", f"{top_institution}")
 
-    col5, col6, col7 = st.columns(3)
-    col5.metric("🏆 Top Department", f"{top_department}")
-    col6.metric("📈 Avg Students/Programme", f"{avg_students_per_programme:.1f}")
-    col7.metric("⭐ Top Institution", f"{top_institution}")
+        # ===== ENHANCED SUMMARY TABLE =====
+        st.subheader("📋 Summary Table of Filtered Data")
 
-    # ===== ENHANCED SUMMARY TABLE =====
-    st.subheader("📋 Summary Table of Filtered Data")
+        # Option to select columns to display
+        all_columns = filtered_df.columns.tolist()
+        default_cols = [col for col in [
+            "number_student_id", "institution_name", "programme_name", "department", "mean_grade_id", "application_day"
+        ] if col in all_columns]
+        selected_columns = st.multiselect(
+            "Select columns to display in the summary table:",
+            options=all_columns,
+            default=default_cols if default_cols else all_columns
+        )
 
-    # Option to select columns to display
-    all_columns = filtered_df.columns.tolist()
-    default_cols = [col for col in all_columns if col in [
-        "number_student_id", "institution_name", "programme_name", "department", "mean_grade_id", "application_day"
-    ]]
-    selected_columns = st.multiselect(
-        "Select columns to display in the summary table:",
-        options=all_columns,
-        default=default_cols if default_cols else all_columns
-    )
+        # Option to set number of rows to show
+        max_rows = min(200, len(filtered_df))
+        num_rows = st.slider(
+            "Number of rows to display:",
+            min_value=5,
+            max_value=max_rows if max_rows > 5 else 5,
+            value=min(50, max_rows),
+            step=5
+        )
 
-    # Option to set number of rows to show
-    max_rows = min(200, len(filtered_df))
-    num_rows = st.slider(
-        "Number of rows to display:",
-        min_value=5,
-        max_value=max_rows if max_rows > 5 else 5,
-        value=min(50, max_rows),
-        step=5
-    )
+        # Show summary stats above table
+        st.markdown(f"**Total Rows (after filtering):** {len(filtered_df):,}")
+        st.markdown(f"**Columns Displayed:** {', '.join(selected_columns)}")
 
-    # Show summary stats above table
-    st.markdown(f"**Total Rows (after filtering):** {len(filtered_df):,}")
-    st.markdown(f"**Columns Displayed:** {', '.join(selected_columns)}")
+        # Display the table
+        if not filtered_df.empty and selected_columns:
+            st.dataframe(filtered_df[selected_columns].head(num_rows), use_container_width=True)
+        else:
+            st.info("No data available to display in the summary table.")
 
-    # Display the table
-    st.dataframe(filtered_df[selected_columns].head(num_rows), use_container_width=True)
+        # Download button for summary table as CSV
+        if not filtered_df.empty and selected_columns:
+            csv_summary = filtered_df[selected_columns].to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="⬇️ Download Summary Table as CSV",
+                data=csv_summary,
+                file_name="summary_table.csv",
+                mime="text/csv"
+            )
 
-    # Download button for summary table as CSV
-    csv_summary = filtered_df[selected_columns].to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="⬇️ Download Summary Table as CSV",
-        data=csv_summary,
-        file_name="summary_table.csv",
-        mime="text/csv"
-    )
+        # ===== DOWNLOAD OPTION =====
+        if not filtered_df.empty:
+            csv = filtered_df.to_csv(index=False).encode('utf-8')
+            st.download_button(
+                label="⬇️ Download Filtered Data as CSV",
+                data=csv,
+                file_name="filtered_kuccps_data.csv",
+                mime="text/csv"
+            )
 
-    # ===== DOWNLOAD OPTION =====
-    csv = filtered_df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="⬇️ Download Filtered Data as CSV",
-        data=csv,
-        file_name="filtered_kuccps_data.csv",
-        mime="text/csv"
-    )
+    # ===== Additional Visualizations =====
 
-    # Additional Visualizations
     # Chart 5: Mean Grade Distribution (Enhanced)
     st.subheader("🎯 Mean Grade Distribution")
-    if "mean_grade_id" in filtered_df.columns:
-        # Allow user to choose chart type
+    if "mean_grade_id" in filtered_df.columns and not filtered_df["mean_grade_id"].isna().all():
         chart_type = st.radio(
             "Select Chart Type for Mean Grade Distribution:",
             options=["Bar", "Pie"],
@@ -672,13 +801,12 @@ with st.container():
 
         grade_counts = (
             filtered_df["mean_grade_id"]
-            .value_counts()
+            .value_counts(dropna=False)
             .sort_index()
             .reset_index()
             .rename(columns={"index": "mean_grade_id", "mean_grade_id": "count"})
         )
 
-        # Optionally, show as percentage
         show_percentage = st.checkbox("Show as Percentage", value=False, key="mean_grade_percentage")
         if show_percentage:
             total = grade_counts["count"].sum()
@@ -716,28 +844,25 @@ with st.container():
             )
             st.plotly_chart(fig5, use_container_width=True)
 
-        # Show table of grade counts
         st.markdown("#### 📋 Mean Grade Distribution Table")
         st.dataframe(grade_counts, use_container_width=True)
-        # Download button for Chart 5 (using HTML export as alternative to 'kaleido')
         try:
             img_html5 = pio.to_html(fig5, full_html=False, include_plotlyjs='cdn')
             st.download_button(
-            "📥 Download Mean Grade Chart (HTML)",
-            img_html5,
-            "mean_grade_distribution.html",
-            "text/html"
+                "📥 Download Mean Grade Chart (HTML)",
+                img_html5,
+                "mean_grade_distribution.html",
+                "text/html"
             )
             st.info("PNG export requires 'kaleido', which may not work on Streamlit Cloud. Use the HTML download instead.")
         except Exception as e:
             st.warning("⚠️ Unable to export image. Please try downloading as HTML.")
     else:
-        st.warning("⚠️ 'mean_grade_id' column not found.")
+        st.warning("⚠️ 'mean_grade_id' column not found or contains only missing values.")
 
     # Chart 6: Applications by Placement Cycle (Enhanced)
     st.subheader("🔄 Applications by Placement Cycle")
-    if "placement_cycle_id" in filtered_df.columns:
-        # Allow user to choose chart type
+    if "placement_cycle_id" in filtered_df.columns and not filtered_df["placement_cycle_id"].isna().all():
         chart6_type = st.radio(
             "Select Chart Type for Placement Cycle:",
             options=["Bar", "Pie"],
@@ -747,13 +872,12 @@ with st.container():
 
         cycle_counts = (
             filtered_df["placement_cycle_id"]
-            .value_counts()
+            .value_counts(dropna=False)
             .sort_index()
             .reset_index()
             .rename(columns={"index": "placement_cycle_id", "placement_cycle_id": "count"})
         )
 
-        # Optionally, show as percentage
         show_cycle_pct = st.checkbox("Show as Percentage (Placement Cycle)", value=False, key="placement_cycle_pct")
         if show_cycle_pct:
             total_cycle = cycle_counts["count"].sum()
@@ -791,35 +915,33 @@ with st.container():
             )
             st.plotly_chart(fig6, use_container_width=True)
 
-        # Show table of placement cycle counts
         st.markdown("#### 📋 Placement Cycle Distribution Table")
         st.dataframe(cycle_counts, use_container_width=True)
 
-        # Download button for Chart 6 (using HTML export as alternative to 'kaleido')
         try:
             img_html6 = pio.to_html(fig6, full_html=False, include_plotlyjs='cdn')
             st.download_button(
-            "📥 Download Placement Cycle Chart (HTML)",
-            img_html6,
-            "applications_by_placement_cycle.html",
-            "text/html"
+                "📥 Download Placement Cycle Chart (HTML)",
+                img_html6,
+                "applications_by_placement_cycle.html",
+                "text/html"
             )
             st.info("PNG export requires 'kaleido', which may not work on Streamlit Cloud. Use the HTML download instead.")
         except Exception as e:
             st.warning("⚠️ Unable to export image. Please try downloading as HTML.")
     else:
-        st.warning("⚠️ 'placement_cycle_id' column not found.")
+        st.warning("⚠️ 'placement_cycle_id' column not found or contains only missing values.")
 
-    # Chart 7: Top 10 Institutions by Student Count (Enhanced)
-    st.subheader("🏆 Top 10 Institutions by Student Count")
-    if "institution_name" in filtered_df.columns and "number_student_id" in filtered_df.columns:
-        # Optionally, allow user to select how many top institutions to show
+    # Chart 7: Top Institutions by Student Count (Enhanced)
+    st.subheader("🏆 Top Institutions by Student Count")
+    if "institution_name" in filtered_df.columns and "number_student_id" in filtered_df.columns and not filtered_df["institution_name"].isna().all():
+        max_top_n = min(30, filtered_df["institution_name"].nunique())
         top_n_institutions = st.slider(
-            "Show Top N Institutions (by student count)", 
-            min_value=5, 
-            max_value=30, 
-            value=10, 
-            step=1, 
+            "Show Top N Institutions (by student count)",
+            min_value=3,
+            max_value=max_top_n if max_top_n >= 3 else 3,
+            value=min(10, max_top_n),
+            step=1,
             key="top_n_institutions"
         )
         top_institutions = (
@@ -830,7 +952,6 @@ with st.container():
             .sort_values(by="student_count", ascending=False)
             .head(top_n_institutions)
         )
-        # Optionally, show department breakdown for each institution
         show_dept_breakdown = st.checkbox("Show Department Breakdown", value=False, key="inst_dept_breakdown")
         if show_dept_breakdown and "department" in filtered_df.columns:
             inst_dept_counts = (
@@ -877,28 +998,25 @@ with st.container():
             )
             fig7.update_traces(texttemplate='%{text:,}', textposition='outside')
         st.plotly_chart(fig7, use_container_width=True)
-        # Show table for more detail
         st.markdown("#### 📋 Top Institutions Table")
         st.dataframe(top_institutions, use_container_width=True)
-        # Download button for Chart 7 (using HTML export as alternative to 'kaleido')
         try:
             img_html7 = pio.to_html(fig7, full_html=False, include_plotlyjs='cdn')
             st.download_button(
-            "📥 Download Top Institutions Chart (HTML)",
-            img_html7,
-            "top_10_institutions.html",
-            "text/html"
+                "📥 Download Top Institutions Chart (HTML)",
+                img_html7,
+                "top_institutions.html",
+                "text/html"
             )
             st.info("PNG export requires 'kaleido', which may not work on Streamlit Cloud. Use the HTML download instead.")
         except Exception as e:
             st.warning("⚠️ Unable to export image. Please try downloading as HTML.")
     else:
-        st.warning("⚠️ Required columns for institution chart are missing.")
+        st.warning("⚠️ Required columns for institution chart are missing or contain only missing values.")
 
     # Chart 8: Application Stage Distribution (Enhanced)
     st.subheader("📝 Application Stage Distribution")
-    if "application_stage_id" in filtered_df.columns:
-        # Allow user to choose chart type
+    if "application_stage_id" in filtered_df.columns and not filtered_df["application_stage_id"].isna().all():
         chart8_type = st.radio(
             "Select Chart Type for Application Stage Distribution:",
             options=["Bar", "Pie"],
@@ -908,13 +1026,12 @@ with st.container():
 
         stage_counts = (
             filtered_df["application_stage_id"]
-            .value_counts()
+            .value_counts(dropna=False)
             .sort_index()
             .reset_index()
             .rename(columns={"index": "application_stage_id", "application_stage_id": "count"})
         )
 
-        # Optionally, show as percentage
         show_stage_pct = st.checkbox("Show as Percentage (Application Stage)", value=False, key="application_stage_pct")
         if show_stage_pct:
             total_stage = stage_counts["count"].sum()
@@ -952,94 +1069,93 @@ with st.container():
             )
             st.plotly_chart(fig8, use_container_width=True)
 
-        # Show table of stage counts
         st.markdown("#### 📋 Application Stage Distribution Table")
         st.dataframe(stage_counts, use_container_width=True)
 
-        # Download button for Chart 8 (using HTML export as alternative to 'kaleido')
         try:
             img_html8 = pio.to_html(fig8, full_html=False, include_plotlyjs='cdn')
             st.download_button(
-            "📥 Download Application Stage Chart (HTML)",
-            img_html8,
-            "application_stage_distribution.html",
-            "text/html"
+                "📥 Download Application Stage Chart (HTML)",
+                img_html8,
+                "application_stage_distribution.html",
+                "text/html"
             )
             st.info("PNG export requires 'kaleido', which may not work on Streamlit Cloud. Use the HTML download instead.")
         except Exception as e:
             st.warning("⚠️ Unable to export image. Please try downloading as HTML.")
     else:
-        st.warning("⚠️ 'application_stage_id' column not found.")
+        st.warning("⚠️ 'application_stage_id' column not found or contains only missing values.")
+        # ====== ABOUT SECTION (Enhanced & Improved) ======
+        with st.expander("ℹ️ About this Dashboard", expanded=False):
+            st.markdown("""
+            ## **KUCCPS Interactive Dashboard**
 
-# ====== ABOUT SECTION (Enhanced) ======
-with st.expander("ℹ️ About this Dashboard", expanded=False):
-    st.markdown("""
-    ## **KUCCPS Interactive Dashboard**
+            Welcome to the KUCCPS Interactive Dashboard!  
+            This tool empowers supervisors, analysts, and stakeholders to explore and analyze KUCCPS application data with ease and flexibility.
 
-    Welcome to the KUCCPS Interactive Dashboard!  
-    This tool empowers supervisors, analysts, and stakeholders to explore and analyze KUCCPS application data with ease and flexibility.
+            **🔑 Key Features:**
+            - **Programme Popularity:** Instantly see which programmes and departments are most sought after.
+            - **Institution Sponsorship:** Compare application volumes between public and private institutions.
+            - **Application Trends:** Track how applications evolve over time, including animated daily breakdowns.
+            - **Academic Profile:** Visualize mean grade distributions and identify top-performing applicant groups.
+            - **Placement Cycle Analysis:** Understand application flows across different placement cycles.
+            - **Top Institutions:** Discover which institutions attract the highest number of students.
+            - **Application Stages:** Monitor applicant progress through various stages.
+            - **Dynamic Filtering:** All insights update in real time as you adjust filters for sponsor, stage, programme, institution, grade, cycle, and day.
+            - **Summary KPIs:** Quick-glance metrics for students, institutions, programmes, and peak activity days.
+            - **Data Export:** Download filtered data and all visualizations for further analysis or reporting.
 
-    **🔑 Key Features:**
-    - **Programme Popularity:** Instantly see which programmes and departments are most sought after.
-    - **Institution Sponsorship:** Compare application volumes between public and private institutions.
-    - **Application Trends:** Track how applications evolve over time, including animated daily breakdowns.
-    - **Academic Profile:** Visualize mean grade distributions and identify top-performing applicant groups.
-    - **Placement Cycle Analysis:** Understand application flows across different placement cycles.
-    - **Top Institutions:** Discover which institutions attract the highest number of students.
-    - **Application Stages:** Monitor applicant progress through various stages.
-    - **Dynamic Filtering:** All insights update in real time as you adjust filters for sponsor, stage, programme, institution, grade, cycle, and day.
-    - **Summary KPIs:** Quick-glance metrics for students, institutions, programmes, and peak activity days.
-    - **Data Export:** Download filtered data and all visualizations for further analysis or reporting.
+            **💡 Pro Tips:**
+            - Use the sidebar filters to drill down into specific cohorts or trends.
+            - Download any chart or table for use in presentations or reports.
+            - Hover over charts for interactive tooltips and deeper insights.
+            - Try the animated charts to visualize how demand changes over time.
 
-    **💡 Pro Tips:**
-    - Use the sidebar filters to drill down into specific cohorts or trends.
-    - Download any chart or table for use in presentations or reports.
-    - Hover over charts for interactive tooltips and deeper insights.
-    - Try the animated charts to visualize how demand changes over time.
+            _This dashboard is designed to support data-driven decision making and uncover actionable insights from KUCCPS application data._
+            """)
 
-    _This dashboard is designed to support data-driven decision making and uncover actionable insights from KUCCPS application data._
-    """)
+        # ====== HELP & USAGE GUIDE (Enhanced & Improved) ======
+        with st.expander("❓ Help & Usage Guide", expanded=False):
+            st.markdown("""
+            ### 📚 **How to Use the Dashboard**
 
-# ====== HELP & USAGE GUIDE (Enhanced) ======
-with st.expander("❓ Help & Usage Guide", expanded=False):
-    st.markdown("""
-    ### 📚 **How to Use the Dashboard**
+            1. **Upload Data:**  
+               Upload your KUCCPS dataset (CSV or Excel) using the uploader at the top of the page.
 
-    1. **Upload Data:**  
-       Upload your KUCCPS dataset (CSV or Excel) using the uploader at the top of the page.
+            2. **Apply Filters:**  
+               Use the sidebar to filter by:
+               - **Institution Sponsor:** (e.g., Public, Private)
+               - **Application Stage:** (e.g., Submitted, Verified)
+               - **Programme Type:** (e.g., Degree, Diploma)
+               - **Programme Name:** (Select specific programmes)
+               - **Institution Name:** (Focus on one or more institutions)
+               - **Mean Grade:** (Academic performance)
+               - **Placement Cycle:** (Application cycle)
+               - **Application Day:** (Analyze trends by day)
 
-    2. **Apply Filters:**  
-       Use the sidebar to filter by:
-       - **Institution Sponsor:** (e.g., Public, Private)
-       - **Application Stage:** (e.g., Submitted, Verified)
-       - **Programme Type:** (e.g., Degree, Diploma)
-       - **Programme Name:** (Select specific programmes)
-       - **Institution Name:** (Focus on one or more institutions)
-       - **Mean Grade:** (Academic performance)
-       - **Placement Cycle:** (Application cycle)
-       - **Application Day:** (Analyze trends by day)
+            3. **Explore Visualizations:**  
+               The main area displays interactive charts, tables, and summary metrics that update automatically as you change filters.
 
-    3. **Explore Visualizations:**  
-       The main area displays interactive charts, tables, and summary metrics that update automatically as you change filters.
+            4. **Download Results:**  
+               Use the download buttons below each chart or table to export data and visualizations for further analysis or reporting.
 
-    4. **Download Results:**  
-       Use the download buttons below each chart or table to export data and visualizations for further analysis or reporting.
+            **🛠️ Filter Descriptions:**
+            - **Institution Sponsor:** Sponsoring body of the institution (e.g., public, private).
+            - **Application Stage:** Stage of the application process.
+            - **Programme Type:** Type of programme (degree, diploma, etc.).
+            - **Programme Name:** Specific academic programme.
+            - **Institution Name:** Name of the institution.
+            - **Mean Grade:** Applicant's mean grade.
+            - **Placement Cycle:** Placement cycle identifier.
+            - **Application Day:** Day of application submission.
 
-    **🛠️ Filter Descriptions:**
-    - **Institution Sponsor:** Sponsoring body of the institution (e.g., public, private).
-    - **Application Stage:** Stage of the application process.
-    - **Programme Type:** Type of programme (degree, diploma, etc.).
-    - **Programme Name:** Specific academic programme.
-    - **Institution Name:** Name of the institution.
-    - **Mean Grade:** Applicant's mean grade.
-    - **Placement Cycle:** Placement cycle identifier.
-    - **Application Day:** Day of application submission.
+            **_Need more help?_**  
+            - Hover over any chart for detailed tooltips.
+            - Use the "Download" buttons to save filtered data or charts.
+            - For best results, use recent versions of Chrome or Edge browsers.
 
-    **_Need more help?_**  
-    - Hover over any chart for detailed tooltips.
-    - Use the "Download" buttons to save filtered data or charts.
-    - For best results, use recent versions of Chrome or Edge browsers.
+            _If you encounter issues or have suggestions, please contact the dashboard administrator._
+            """)
 
-    _If you encounter issues or have suggestions, please contact the dashboard administrator._
-    """)
-st.info("Please upload a KUCCPS dataset to get started. The dashboard will unlock all features once your data is loaded.")
+        if uploaded_file is None:
+            st.info("Please upload a KUCCPS dataset to get started. The dashboard will unlock all features once your data is loaded.")
