@@ -1,101 +1,265 @@
 import streamlit as st
 import pandas as pd
+from functools import reduce
+import operator
 import plotly.express as px
 import plotly.io as pio
 
-# Page setup
-st.set_page_config(page_title="KUCCPS Dashboard", layout="wide")
+# ===== PAGE SETUP & CUSTOMIZATION =====
+st.set_page_config(
+    page_title="KUCCPS Dashboard",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Custom CSS for better visuals
+st.markdown("""
+    <style>
+        .css-18e3th9 { padding-top: 1.5rem; }
+        .css-1d391kg { padding-top: 1.5rem; }
+        .css-1v0mbdj { padding-top: 1.5rem; }
+        .css-1cpxqw2 { padding-top: 1.5rem; }
+        .css-1kyxreq { padding-top: 1.5rem; }
+        .css-1dp5vir { padding-top: 1.5rem; }
+        .css-1v0mbdj { padding-top: 1.5rem; }
+        .css-1cpxqw2 { padding-top: 1.5rem; }
+        .css-1kyxreq { padding-top: 1.5rem; }
+        .css-1dp5vir { padding-top: 1.5rem; }
+        .stButton>button {
+            color: white;
+            background: #2b5876;
+            background: linear-gradient(90deg, #4e4376 0%, #2b5876 100%);
+            border-radius: 8px;
+            border: none;
+            padding: 0.5em 1.5em;
+            font-weight: 600;
+        }
+        .stDownloadButton>button {
+            color: white;
+            background: #11998e;
+            background: linear-gradient(90deg, #38ef7d 0%, #11998e 100%);
+            border-radius: 8px;
+            border: none;
+            padding: 0.5em 1.5em;
+            font-weight: 600;
+        }
+        .stRadio > div { flex-direction: row; }
+        .stCheckbox > label { font-weight: 500; }
+        .stSlider > div { color: #2b5876; }
+        .stDataFrame { background: #f8fafc; }
+        .stMetric { background: #f0f4f8; border-radius: 8px; }
+    </style>
+""", unsafe_allow_html=True)
+
+# Main Title and Subtitle
 st.title("📊 KUCCPS INTERACTIVE DASHBOARD")
+st.caption("Empowering supervisors, analysts, and stakeholders to explore and analyze KUCCPS application data interactively.")
 
-# File upload
-uploaded_file = st.file_uploader("📂 Upload KUCCPS dataset (CSV or Excel)", type=["csv", "xlsx"])
+# ===== File Upload Section (Enhanced) =====
+st.markdown("### 📂 Upload Your KUCCPS Dataset")
+with st.container():
+    uploaded_file = st.file_uploader(
+        "Upload a KUCCPS dataset (CSV or Excel)", 
+        type=["csv", "xlsx"],
+        help="Accepted formats: .csv, .xlsx. For best results, ensure your file includes columns like 'programme_name', 'institution_name', 'mean_grade_id', etc."
+    )
+    st.caption(
+        "Tip: Download a sample template from [here](https://github.com/kuccps-dashboard/sample-data/raw/main/sample_kuccps_data.xlsx) if unsure about the required format."
+    )
+    st.markdown(
+        """
+        <small>
+        <ul>
+            <li>Large files may take a few seconds to load.</li>
+            <li>All processing is done locally in your browser session for privacy.</li>
+        </ul>
+        </small>
+        """, unsafe_allow_html=True
+    )
+    # ===== Data Loading, Cleaning, and Filtering Section (Enhanced) =====
 
-# Function to categorize programmes into departments
-def categorize_programme(programme_name):
-    programme_name = programme_name.lower()  # Convert to lowercase for case-insensitive matching
-    if any(keyword in programme_name for keyword in ["nursing", "medicine", "surgery", "clinical", "physiotherapy"]):
-        return "Health Sciences"
-    elif any(keyword in programme_name for keyword in ["engineering"]):
-        return "Engineering"
-    elif any(keyword in programme_name for keyword in ["computer", "cloud", "software"]):
-        return "ICT / Tech"
-    elif any(keyword in programme_name for keyword in ["commerce", "business"]):
-        return "Business"
-    elif any(keyword in programme_name for keyword in ["law"]):
-        return "Arts & Humanities"
-    elif any(keyword in programme_name for keyword in ["education", "teaching"]):
-        return "Education"
-    elif any(keyword in programme_name for keyword in ["agric"]):
-        return "Agriculture"
-    elif any(keyword in programme_name for keyword in ["tourism", "hospitality"]):
-        return "Hospitality & Tourism"
-    elif any(keyword in programme_name for keyword in ["architecture"]):
-        return "Architecture & Planning"
-    elif any(keyword in programme_name for keyword in ["statistics", "mathematics"]):
-        return "Math & Science"
-    else:
+    # Improved department categorization with more keywords and flexibility
+    def categorize_programme(programme_name):
+        if pd.isna(programme_name):
+            return "Other"
+        name = programme_name.lower()
+        mapping = [
+            (["nursing", "medicine", "surgery", "clinical", "physiotherapy", "pharmacy", "dental", "public health", "medical", "nutrition", "biomedical"], "Health Sciences"),
+            (["engineering", "civil", "mechanical", "electrical", "mechatronic", "telecom", "automotive", "chemical", "mining", "manufacturing"], "Engineering"),
+            (["computer", "ict", "information technology", "cloud", "software", "data science", "ai", "cyber", "informatics", "it"], "ICT / Tech"),
+            (["commerce", "business", "accounting", "procurement", "finance", "marketing", "management", "entrepreneurship", "economics"], "Business"),
+            (["law", "criminology", "justice", "legal"], "Law & Humanities"),
+            (["education", "teaching", "pedagogy", "curriculum", "teacher"], "Education"),
+            (["agric", "horticulture", "animal", "crop", "food science", "agribusiness", "soil", "dairy", "veterinary"], "Agriculture"),
+            (["tourism", "hospitality", "hotel", "leisure", "travel"], "Hospitality & Tourism"),
+            (["architecture", "planning", "urban", "landscape", "built environment"], "Architecture & Planning"),
+            (["statistics", "mathematics", "math", "actuarial", "quantitative"], "Math & Science"),
+            (["science", "biology", "chemistry", "physics", "biochemistry", "microbiology", "zoology", "botany", "geology", "environmental"], "Pure & Applied Sciences"),
+            (["arts", "music", "fine art", "design", "drama", "theatre", "literature", "philosophy", "history", "language", "linguistics", "communication", "media"], "Arts & Humanities"),
+            (["social work", "sociology", "psychology", "community", "development", "anthropology", "counseling"], "Social Sciences"),
+            (["sports", "physical education", "recreation"], "Sports & Recreation"),
+            (["aviation", "aeronautical", "pilot"], "Aviation"),
+            (["marine", "maritime", "ocean", "fisheries"], "Marine & Fisheries"),
+            (["library", "records", "information science"], "Library & Information Science"),
+            (["logistics", "supply chain", "transport", "shipping"], "Logistics & Transport"),
+            (["fashion", "textile", "garment"], "Fashion & Textile"),
+            (["journalism", "mass communication", "broadcast"], "Media & Communication"),
+        ]
+        for keywords, dept in mapping:
+            if any(k in name for k in keywords):
+                return dept
         return "Other"
 
-if uploaded_file is not None:
-    # Load file
-    if uploaded_file.name.endswith(".csv"):
-        df = pd.read_csv(uploaded_file)
-    else:
-        df = pd.read_excel(uploaded_file, engine="openpyxl")
+    if uploaded_file is not None:
+        # Load file with error handling and preview
+        try:
+            if uploaded_file.name.endswith(".csv"):
+                df = pd.read_csv(uploaded_file)
+            else:
+                df = pd.read_excel(uploaded_file, engine="openpyxl")
+        except Exception as e:
+            st.error(f"❌ Error loading file: {e}")
+            st.stop()
 
-    # Convert 'application_day' like 'Day 1' → 1 (int)
-    if "application_day" in df.columns:
-        df["application_day"] = df["application_day"].astype(str).str.extract(r'(\d+)').astype(float)
-    
-    # Clean column names
-    df.columns = df.columns.str.strip().str.lower().str.replace(" ", "_").str.replace("#", "number")
-    
-    # Categorize programmes into departments
-    df['department'] = df['programme_name'].apply(categorize_programme)
+        # Clean column names: lower, underscores, remove special chars
+        df.columns = (
+            df.columns.str.strip()
+            .str.lower()
+            .str.replace(" ", "_")
+            .str.replace("#", "number")
+            .str.replace(r"[^\w_]", "", regex=True)
+        )
 
-    st.success("✅ File loaded successfully!")
-    st.subheader("🔍 Data Preview")
-    st.dataframe(df.head())
+        # Convert 'application_day' like 'Day 1' → 1 (int)
+        if "application_day" in df.columns:
+            df["application_day"] = (
+                df["application_day"]
+                .astype(str)
+                .str.extract(r'(\d+)')
+                .astype(float)
+            )
 
-    # ========== Filters ==========
-    st.sidebar.header("🔎 Filter Data")
-    selected_sponsors = st.sidebar.multiselect("Select Institution Sponsor", options=df["institution_sponsor_id"].unique(), default=df["institution_sponsor_id"].unique())
-    selected_stages = st.sidebar.multiselect("Select Application Stage", options=df["application_stage_id"].unique(), default=df["application_stage_id"].unique())
-    selected_types = st.sidebar.multiselect("Select Programme Type", options=df["programme_type_id"].unique(), default=df["programme_type_id"].unique())
-    selected_programmes = st.sidebar.multiselect("Select Programme Name", options=df["programme_name"].unique(), default=df["programme_name"].unique())
-    selected_institutions = st.sidebar.multiselect("Select Institution Name", options=df["institution_name"].unique(), default=df["institution_name"].unique())
-    selected_grades = st.sidebar.multiselect("Select Mean Grade", options=df["mean_grade_id"].unique(), default=df["mean_grade_id"].unique())
-    selected_cycles = st.sidebar.multiselect("Select Placement Cycle", options=df["placement_cycle_id"].unique(), default=df["placement_cycle_id"].unique())
-    selected_departments = st.sidebar.multiselect("Select Department", options=df["department"].unique(), default=df["department"].unique())
+        # Categorize programmes into departments (robust to missing column)
+        if "programme_name" in df.columns:
+            df["department"] = df["programme_name"].apply(categorize_programme)
+        else:
+            df["department"] = "Other"
 
-    # ========== Apply Filters ==========
-    filtered_df = df[
-        (df["institution_sponsor_id"].isin(selected_sponsors)) &
-        (df["application_stage_id"].isin(selected_stages)) &
-        (df["programme_type_id"].isin(selected_types)) &
-        (df["programme_name"].isin(selected_programmes)) &
-        (df["institution_name"].isin(selected_institutions)) &
-        (df["mean_grade_id"].isin(selected_grades)) &
-        (df["placement_cycle_id"].isin(selected_cycles)) &
-        (df["department"].isin(selected_departments))
-    ]
+        st.success("✅ File loaded successfully!")
+        st.subheader("🔍 Data Preview")
+        st.dataframe(df.head(20), use_container_width=True)
+
+        # ========== Sidebar Filters (Enhanced) ==========
+        st.sidebar.header("🔎 Filter Data")
+
+        def sidebar_multiselect(label, col, default_all=True):
+            if col in df.columns:
+                options = sorted(df[col].dropna().unique())
+                default = options if default_all else []
+                return st.sidebar.multiselect(label, options=options, default=default)
+            return []
+
+        selected_sponsors = sidebar_multiselect("Select Institution Sponsor", "institution_sponsor_id")
+        selected_stages = sidebar_multiselect("Select Application Stage", "application_stage_id")
+        selected_types = sidebar_multiselect("Select Programme Type", "programme_type_id")
+        selected_programmes = sidebar_multiselect("Select Programme Name", "programme_name")
+        selected_institutions = sidebar_multiselect("Select Institution Name", "institution_name")
+        selected_grades = sidebar_multiselect("Select Mean Grade", "mean_grade_id")
+        selected_cycles = sidebar_multiselect("Select Placement Cycle", "placement_cycle_id")
+        selected_departments = sidebar_multiselect("Select Department", "department")
+
+        # ========== Apply Filters (Robust) ==========
+        filter_conditions = []
+        if selected_sponsors:
+            filter_conditions.append(df["institution_sponsor_id"].isin(selected_sponsors))
+        if selected_stages:
+            filter_conditions.append(df["application_stage_id"].isin(selected_stages))
+        if selected_types:
+            filter_conditions.append(df["programme_type_id"].isin(selected_types))
+        if selected_programmes:
+            filter_conditions.append(df["programme_name"].isin(selected_programmes))
+        if selected_institutions:
+            filter_conditions.append(df["institution_name"].isin(selected_institutions))
+        if selected_grades:
+            filter_conditions.append(df["mean_grade_id"].isin(selected_grades))
+        if selected_cycles:
+            filter_conditions.append(df["placement_cycle_id"].isin(selected_cycles))
+        if selected_departments:
+            filter_conditions.append(df["department"].isin(selected_departments))
+
+        if filter_conditions:
+            filtered_df = df[reduce(operator.and_, filter_conditions)]
+        else:
+            filtered_df = df.copy()
 
     # ===== VISUALIZATIONS =====
-    # ========== Chart 1: Programme Name Breakdown ==========
+    # ========== Chart 1: Programme Department Breakdown (Enhanced) ==========
     st.subheader("🧭 Programme Department Breakdown")
-    if "department" in filtered_df.columns:
-        dept_counts = filtered_df["department"].value_counts().reset_index()
-        dept_counts.columns = ["department", "count"]
 
-        fig1 = px.pie(
-            dept_counts,
-            names="department",
-            values="count",
-            hole=0.5,
-            color_discrete_sequence=px.colors.sequential.RdBu,
+    if "department" in filtered_df.columns:
+        # Allow user to choose chart type
+        chart1_type = st.radio(
+            "Select Chart Type for Department Breakdown:",
+            options=["Pie", "Bar"],
+            horizontal=True,
+            key="department_chart_type"
         )
-        fig1.update_traces(textinfo="percent+label")
+
+        dept_counts = (
+            filtered_df["department"]
+            .value_counts()
+            .reset_index()
+            .rename(columns={"index": "department", "department": "count"})
+        )
+
+        # Optionally, show as percentage
+        show_dept_pct = st.checkbox("Show as Percentage (Department)", value=False, key="department_pct")
+        if show_dept_pct:
+            total_dept = dept_counts["count"].sum()
+            dept_counts["percentage"] = (dept_counts["count"] / total_dept * 100).round(2)
+
+        if chart1_type == "Pie":
+            fig1 = px.pie(
+                dept_counts,
+                names="department",
+                values="count" if not show_dept_pct else "percentage",
+                hole=0.5,
+                color_discrete_sequence=px.colors.sequential.RdBu,
+            )
+            fig1.update_traces(
+                textinfo="percent+label" if not show_dept_pct else "label+value",
+                pull=[0.05]*len(dept_counts)
+            )
+        else:
+            fig1 = px.bar(
+                dept_counts,
+                x="department",
+                y="count" if not show_dept_pct else "percentage",
+                text="count" if not show_dept_pct else "percentage",
+                color="department",
+                color_discrete_sequence=px.colors.sequential.RdBu,
+            )
+            fig1.update_layout(
+                xaxis_title="Department",
+                yaxis_title="Number of Applications" if not show_dept_pct else "Percentage (%)",
+                showlegend=False,
+                xaxis_tickangle=-30,
+                margin=dict(b=120),
+                height=500,
+            )
+            fig1.update_traces(
+                texttemplate='%{text}' + ('' if not show_dept_pct else '%'),
+                textposition='outside'
+            )
+
         st.plotly_chart(fig1, use_container_width=True)
+
+        # Show table of department counts
+        st.markdown("#### 📋 Department Breakdown Table")
+        st.dataframe(dept_counts, use_container_width=True)
+    else:
+        st.warning("⚠️ 'department' column not found.")
 
         # Download button for Chart 1 (using HTML export as fallback)
         try:
@@ -507,8 +671,8 @@ if uploaded_file is not None:
             .value_counts()
             .sort_index()
             .reset_index()
-            .rename(columns={"index": "mean_grade_id", "mean_grade_id": "count"})
         )
+        grade_counts.columns = ["mean_grade_id", "count"]  # Ensure unique column names
 
         # Optionally, show as percentage
         show_percentage = st.checkbox("Show as Percentage", value=False, key="mean_grade_percentage")
