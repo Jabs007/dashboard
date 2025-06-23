@@ -1017,8 +1017,12 @@ with st.container():
             cycle_dept_counts = cycle_dept_counts.merge(
                 cycle_counts[["placement_cycle_id", "percentage"]],
                 on="placement_cycle_id",
-                how="left"
+                how="left",
+                suffixes=('', '_y')
             )
+            # Remove any duplicate 'percentage_y' column if present
+            if "percentage_y" in cycle_dept_counts.columns:
+                cycle_dept_counts = cycle_dept_counts.drop(columns=["percentage_y"])
 
         if chart6_type == "Bar":
             fig6 = px.bar(
