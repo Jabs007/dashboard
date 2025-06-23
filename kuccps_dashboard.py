@@ -895,6 +895,7 @@ with st.container():
         if set(grade_counts["mean_grade_id"]).issubset(set(grade_order)):
             grade_counts["mean_grade_id"] = pd.Categorical(grade_counts["mean_grade_id"], categories=grade_order, ordered=True)
             grade_counts = grade_counts.sort_values("mean_grade_id")
+            grade_counts = grade_counts.reset_index(drop=True)
 
         show_percentage = st.checkbox("Show as Percentage", value=False, key="mean_grade_percentage")
         if show_percentage:
