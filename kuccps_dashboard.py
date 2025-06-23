@@ -355,7 +355,10 @@ with st.container():
         show_sponsor_pct = st.checkbox("Show as Percentage (Sponsorship)", value=False, key="sponsor_pct")
         if show_sponsor_pct:
             total_sponsor = sponsor_counts["Unique Students"].sum()
-            sponsor_counts["percentage"] = (sponsor_counts["Unique Students"] / total_sponsor * 100).round(2)
+            if total_sponsor == 0:
+                sponsor_counts["percentage"] = 0
+            else:
+                sponsor_counts["percentage"] = (sponsor_counts["Unique Students"] / total_sponsor * 100).round(2)
 
         chart2_type = st.radio(
             "Select Chart Type for Sponsorship Breakdown:",
