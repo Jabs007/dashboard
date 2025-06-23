@@ -927,7 +927,7 @@ with st.container():
                 names="mean_grade_id",
                 values="count" if not show_percentage else "percentage",
                 hole=0.4,
-                color_discrete_sequence=px.colors.sequential.Pastel
+                color_discrete_sequence=px.colors.qualitative.Pastel
             )
             fig5.update_traces(
             textinfo="percent+label" if not show_percentage else "label+value",
