@@ -1000,20 +1000,20 @@ with st.container():
             .value_counts(dropna=False)
             .sort_index()
             .reset_index()
-            .rename(columns={"index": "placement_cycle_id", "placement_cycle_id": "count"})
+            .rename(columns={"index": "placement_cycle_id", "placement_cycle_id": "application_count"})
         )
 
         show_cycle_pct = st.checkbox("Show as Percentage (Placement Cycle)", value=False, key="placement_cycle_pct")
         if show_cycle_pct:
-            total_cycle = cycle_counts["count"].sum()
-            cycle_counts["percentage"] = (cycle_counts["count"] / total_cycle * 100).round(2)
+            total_cycle = cycle_counts["application_count"].sum()
+            cycle_counts["percentage"] = (cycle_counts["application_count"] / total_cycle * 100).round(2)
 
         if chart6_type == "Bar":
             fig6 = px.bar(
                 cycle_counts,
                 x="placement_cycle_id",
-                y="count" if not show_cycle_pct else "percentage",
-                text="count" if not show_cycle_pct else "percentage",
+                y="application_count" if not show_cycle_pct else "percentage",
+                text="application_count" if not show_cycle_pct else "percentage",
                 color_discrete_sequence=px.colors.qualitative.Prism
             )
             fig6.update_layout(
@@ -1030,7 +1030,7 @@ with st.container():
             fig6 = px.pie(
                 cycle_counts,
                 names="placement_cycle_id",
-                values="count" if not show_cycle_pct else "percentage",
+                values="application_count" if not show_cycle_pct else "percentage",
                 hole=0.4,
                 color_discrete_sequence=px.colors.sequential.Plasma
             )
