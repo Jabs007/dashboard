@@ -894,7 +894,7 @@ with st.container():
 
     # Chart 6: Applications by Placement Cycle (Enhanced)
     st.subheader("🔄 Applications by Placement Cycle")
-    if "placement_cycle_id" in filtered_df.columns and not filtered_df["placement_cycle_id"].isna().all():
+    if 'filtered_df' in locals() and "placement_cycle_id" in filtered_df.columns and not filtered_df["placement_cycle_id"].isna().all():
         chart6_type = st.radio(
             "Select Chart Type for Placement Cycle:",
             options=["Bar", "Pie"],
