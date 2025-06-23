@@ -1273,8 +1273,8 @@ with st.container():
             .value_counts(dropna=False)
             .sort_index()
             .reset_index()
-            .rename(columns={"index": "application_stage_id", "application_stage_id": "count"})
         )
+        stage_counts.columns = ["application_stage_id", "count"]  # Ensure unique column names
 
         show_stage_pct = st.checkbox("Show as Percentage (Application Stage)", value=False, key="application_stage_pct")
         if show_stage_pct:
