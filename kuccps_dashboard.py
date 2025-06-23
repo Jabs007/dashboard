@@ -342,7 +342,7 @@ with st.container():
 
     # ========== Chart 2: Public vs Private ==========
     st.subheader("🏫 Institution Sponsorship Summary")
-    if "institution_sponsor_id" in filtered_df.columns and "number_student_id" in filtered_df.columns:
+    if uploaded_file is not None and "institution_sponsor_id" in filtered_df.columns and "number_student_id" in filtered_df.columns:
         sponsor_counts = (
             filtered_df.groupby("institution_sponsor_id")["number_student_id"]
             .nunique()
