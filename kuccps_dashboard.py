@@ -197,7 +197,7 @@ with st.container():
     # ========== Chart 1: Programme Department Breakdown (Enhanced) ==========
     st.subheader("🧭 Programme Department Breakdown")
 
-    if "department" in filtered_df.columns:
+    if uploaded_file is not None and "department" in filtered_df.columns:
         # Allow user to choose chart type
         chart1_type = st.radio(
             "Select Chart Type for Department Breakdown:",
@@ -212,6 +212,10 @@ with st.container():
             .reset_index()
             .rename(columns={"index": "department", "department": "count"})
         )
+        # Ensure unique column names (avoid duplicate 'department' column)
+        if dept_counts.columns.duplicated().any():
+            cols = pd.io.parsers.ParserBase({'names':dept_counts.columns})._maybe_dedup_names(dept_counts.columns)
+            dept_counts.columns = cols
 
         # Optionally, show as percentage
         show_dept_pct = st.checkbox("Show as Percentage (Department)", value=False, key="department_pct")
