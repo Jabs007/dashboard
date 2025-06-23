@@ -576,7 +576,7 @@ with st.container():
     # ========== Application Day Filter & Animated Programme Demand Chart ==========
 
     # Application Day Filter (Sidebar)
-    if "application_day" in df.columns and not df["application_day"].isna().all():
+    if "df" in locals() and "application_day" in df.columns and not df["application_day"].isna().all():
         st.sidebar.markdown("### ⏱️ Filter by Application Day")
         min_day = int(df["application_day"].min())
         max_day = int(df["application_day"].max())
@@ -797,7 +797,7 @@ with st.container():
 
     # Chart 5: Mean Grade Distribution (Enhanced)
     st.subheader("🎯 Mean Grade Distribution")
-    if "mean_grade_id" in filtered_df.columns and not filtered_df["mean_grade_id"].isna().all():
+    if 'filtered_df' in locals() and "mean_grade_id" in filtered_df.columns and not filtered_df["mean_grade_id"].isna().all():
         chart_type = st.radio(
             "Select Chart Type for Mean Grade Distribution:",
             options=["Bar", "Pie"],
@@ -940,7 +940,7 @@ with st.container():
 
     # Chart 7: Top Institutions by Student Count (Enhanced)
     st.subheader("🏆 Top Institutions by Student Count")
-    if "institution_name" in filtered_df.columns and "number_student_id" in filtered_df.columns and not filtered_df["institution_name"].isna().all():
+    if 'filtered_df' in locals() and "institution_name" in filtered_df.columns and "number_student_id" in filtered_df.columns and not filtered_df["institution_name"].isna().all():
         max_top_n = min(30, filtered_df["institution_name"].nunique())
         top_n_institutions = st.slider(
             "Show Top N Institutions (by student count)",
@@ -1022,7 +1022,7 @@ with st.container():
 
     # Chart 8: Application Stage Distribution (Enhanced)
     st.subheader("📝 Application Stage Distribution")
-    if "application_stage_id" in filtered_df.columns and not filtered_df["application_stage_id"].isna().all():
+    if 'filtered_df' in locals() and "application_stage_id" in filtered_df.columns and not filtered_df["application_stage_id"].isna().all():
         chart8_type = st.radio(
             "Select Chart Type for Application Stage Distribution:",
             options=["Bar", "Pie"],
