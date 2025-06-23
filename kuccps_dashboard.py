@@ -5,7 +5,7 @@ import plotly.io as pio
 
 # Page setup
 st.set_page_config(page_title="KUCCPS Dashboard", layout="wide")
-st.title("📊 KUCCPS Interactive Dashboard")
+st.title("📊 KUCCPS INTERACTIVE DASHBOARD")
 
 # File upload
 uploaded_file = st.file_uploader("📂 Upload KUCCPS dataset (CSV or Excel)", type=["csv", "xlsx"])
@@ -97,8 +97,8 @@ if uploaded_file is not None:
         fig1.update_traces(textinfo="percent+label")
         st.plotly_chart(fig1, use_container_width=True)
 
-        # Download button
-        img_bytes1 = pio.to_image(fig1, format="png")
+        # Download button for Chart 1
+        img_bytes1 = pio.to_image(fig1, format="png", engine="kaleido")
         st.download_button("📥 Download Programme Breakdown", img_bytes1, "programme_pie.png", "image/png")
     else:
         st.warning("⚠️ 'programme_name' column not found.")
@@ -120,9 +120,9 @@ if uploaded_file is not None:
         fig2.update_layout(xaxis_title="Institution Type", yaxis_title="Number of Institutions")
         st.plotly_chart(fig2, use_container_width=True)
 
-        # Download button
-        img_bytes2 = pio.to_image(fig2, format="png")
-        st.download_button("📥 Download Sponsorship Chart", img_bytes2, "sponsorship_bar.png", "image/png")
+        # Download button for Chart 2
+        img_bytes2 = pio.to_image(fig2, format="png", engine="kaleido")
+        st.download_button("📥 Download Institution Sponsorship Chart", img_bytes2, "institution_sponsorship.png", "image/png")
     else:
         st.warning("⚠️ 'institution_sponsor_id' column not found.")
 
@@ -147,9 +147,9 @@ if uploaded_file is not None:
         )
         st.plotly_chart(fig3, use_container_width=True)
 
-        # Download button
-        img_bytes3 = pio.to_image(fig3, format="png")
-        st.download_button("📥 Download Programme Chart", img_bytes3, "programme_bar.png", "image/png")
+        # Download button for Chart 3
+        img_bytes3 = pio.to_image(fig3, format="png", engine="kaleido")
+        st.download_button("📥 Download Student Count Chart", img_bytes3, "student_count_per_programme.png", "image/png")
     else:
         st.warning("⚠️ Required columns missing.")
 
@@ -169,9 +169,9 @@ if uploaded_file is not None:
         )
         st.plotly_chart(fig4, use_container_width=True)
 
-        # Download button
-        img_bytes4 = pio.to_image(fig4, format="png")
-        st.download_button("📥 Download Application Trend", img_bytes4, "application_trend.png", "image/png")
+        # Download button for Chart 4
+        img_bytes4 = pio.to_image(fig4, format="png", engine="kaleido")
+        st.download_button("📥 Download Application Trend Chart", img_bytes4, "application_trend.png", "image/png")
     else:
         st.warning("⚠️ 'application_day' column not found.")
 
@@ -187,7 +187,7 @@ if uploaded_file is not None:
     ]
 
     # ========== Animated Chart by Day ==========
-    st.subheader("📊 Programme Demand  by Application Day")
+    st.subheader("📊 Programme Demand by Application Day")
 
     if "programme_name" in filtered_df.columns and "number_student_id" in filtered_df.columns and "application_day" in filtered_df.columns:
         animated_df = filtered_df.groupby(["application_day", "programme_name"])["number_student_id"].count().reset_index()
@@ -235,7 +235,7 @@ if uploaded_file is not None:
     csv = filtered_df.to_csv(index=False).encode('utf-8')
     st.download_button("⬇️ Download Filtered Data as CSV", data=csv, file_name="filtered_kuccps_data.csv", mime="text/csv")
 
-    #Additional Visualizations
+    # Additional Visualizations
     # Chart 5: Mean Grade Distribution
     st.subheader("🎯 Mean Grade Distribution")
     if "mean_grade_id" in filtered_df.columns:
@@ -257,8 +257,9 @@ if uploaded_file is not None:
         )
         st.plotly_chart(fig5, use_container_width=True)
 
-        img_bytes5 = pio.to_image(fig5, format="png")
-        st.download_button("📥 Download Mean Grade Chart", img_bytes5, "mean_grade_bar.png", "image/png")
+        # Download button for Chart 5
+        img_bytes5 = pio.to_image(fig5, format="png", engine="kaleido")
+        st.download_button("📥 Download Mean Grade Chart", img_bytes5, "mean_grade_distribution.png", "image/png")
     else:
         st.warning("⚠️ 'mean_grade_id' column not found.")
 
@@ -283,8 +284,9 @@ if uploaded_file is not None:
         )
         st.plotly_chart(fig6, use_container_width=True)
 
-        img_bytes6 = pio.to_image(fig6, format="png")
-        st.download_button("📥 Download Placement Cycle Chart", img_bytes6, "placement_cycle_bar.png", "image/png")
+        # Download button for Chart 6
+        img_bytes6 = pio.to_image(fig6, format="png", engine="kaleido")
+        st.download_button("📥 Download Placement Cycle Chart", img_bytes6, "applications_by_placement_cycle.png", "image/png")
     else:
         st.warning("⚠️ 'placement_cycle_id' column not found.")
 
@@ -314,8 +316,9 @@ if uploaded_file is not None:
         )
         st.plotly_chart(fig7, use_container_width=True)
 
-        img_bytes7 = pio.to_image(fig7, format="png")
-        st.download_button("📥 Download Top Institutions Chart", img_bytes7, "top_institutions_bar.png", "image/png")
+        # Download button for Chart 7
+        img_bytes7 = pio.to_image(fig7, format="png", engine="kaleido")
+        st.download_button("📥 Download Top Institutions Chart", img_bytes7, "top_10_institutions.png", "image/png")
     else:
         st.warning("⚠️ Required columns for institution chart are missing.")
 
@@ -335,8 +338,9 @@ if uploaded_file is not None:
         fig8.update_traces(textinfo="percent+label")
         st.plotly_chart(fig8, use_container_width=True)
 
-        img_bytes8 = pio.to_image(fig8, format="png")
-        st.download_button("📥 Download Application Stage Chart", img_bytes8, "application_stage_pie.png", "image/png")
+        # Download button for Chart 8
+        img_bytes8 = pio.to_image(fig8, format="png", engine="kaleido")
+        st.download_button("📥 Download Application Stage Chart", img_bytes8, "application_stage_distribution.png", "image/png")
     else:
         st.warning("⚠️ 'application_stage_id' column not found.")
 
@@ -383,3 +387,4 @@ with st.expander("❓ Help & Usage Guide", expanded=False):
 
     _Tip: Hover over charts for more details. Use the download buttons to save charts and filtered data for reporting or further analysis._
     """)
+st.info("Please upload a KUCCPS dataset to get started.")
