@@ -7,7 +7,7 @@ import plotly.io as pio
 
 # ===== PAGE SETUP & CUSTOMIZATION =====
 st.set_page_config(
-    page_title="KUCCPS Dashboard",
+    page_title="KUCCPS DASHBOARD",
     page_icon="📊",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -275,45 +275,48 @@ with st.container():
             .reset_index()
             .rename(columns={"index": "department", "department": "count"})
         )
-
         # Optionally, show as percentage
         show_dept_pct = st.checkbox("Show as Percentage (Department)", value=False, key="department_pct")
         if show_dept_pct:
             total_dept = dept_counts["count"].sum()
-            dept_counts["percentage"] = (dept_counts["count"] / total_dept * 100).round(2)
+            # Avoid division by zero
+            if total_dept == 0:
+                dept_counts["percentage"] = 0
+            else:
+                dept_counts["percentage"] = (dept_counts["count"] / total_dept * 100).round(2)
 
         if chart1_type == "Pie":
             fig1 = px.pie(
-                dept_counts,
-                names="department",
-                values="count" if not show_dept_pct else "percentage",
-                hole=0.5,
-                color_discrete_sequence=px.colors.sequential.RdBu,
+            dept_counts,
+            names="department",
+            values="count" if not show_dept_pct else "percentage",
+            hole=0.5,
+            color_discrete_sequence=px.colors.sequential.RdBu,
             )
             fig1.update_traces(
-                textinfo="percent+label" if not show_dept_pct else "label+value",
-                pull=[0.05]*len(dept_counts)
+            textinfo="percent+label" if not show_dept_pct else "label+value",
+            pull=[0.05]*len(dept_counts)
             )
         else:
             fig1 = px.bar(
-                dept_counts,
-                x="department",
-                y="count" if not show_dept_pct else "percentage",
-                text="count" if not show_dept_pct else "percentage",
-                color="department",
-                color_discrete_sequence=px.colors.sequential.RdBu,
+            dept_counts,
+            x="department",
+            y="count" if not show_dept_pct else "percentage",
+            text="count" if not show_dept_pct else "percentage",
+            color="department",
+            color_discrete_sequence=px.colors.sequential.RdBu,
             )
             fig1.update_layout(
-                xaxis_title="Department",
-                yaxis_title="Number of Applications" if not show_dept_pct else "Percentage (%)",
-                showlegend=False,
-                xaxis_tickangle=-30,
-                margin=dict(b=120),
-                height=500,
+            xaxis_title="Department",
+            yaxis_title="Number of Applications" if not show_dept_pct else "Percentage (%)",
+            showlegend=False,
+            xaxis_tickangle=-30,
+            margin=dict(b=120),
+            height=500,
             )
             fig1.update_traces(
-                texttemplate='%{text}' + ('' if not show_dept_pct else '%'),
-                textposition='outside'
+            texttemplate='%{text}' + ('' if not show_dept_pct else '%'),
+            textposition='outside'
             )
 
         st.plotly_chart(fig1, use_container_width=True)
