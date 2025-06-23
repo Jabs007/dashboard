@@ -1025,23 +1025,33 @@ with st.container():
                 cycle_dept_counts = cycle_dept_counts.drop(columns=["percentage_y"])
 
         if chart6_type == "Bar":
-            fig6 = px.bar(
-                cycle_counts,
-                x="placement_cycle_id",
-                y="application_count" if not show_cycle_pct else "percentage",
-                text="application_count" if not show_cycle_pct else "percentage",
-                color_discrete_sequence=px.colors.qualitative.Prism
-            )
-            fig6.update_layout(
-                xaxis_title="Placement Cycle",
-                yaxis_title="Number of Applications" if not show_cycle_pct else "Percentage (%)",
-                showlegend=False
-            )
-            fig6.update_traces(
-                texttemplate='%{text}' + ('' if not show_cycle_pct else '%'),
-                textposition='outside'
-            )
-            st.plotly_chart(fig6, use_container_width=True)
+            y_col = "application_count" if not show_cycle_pct else "percentage"
+            # Ensure DataFrame is not empty and has required columns
+            if (
+                not cycle_counts.empty
+                and "placement_cycle_id" in cycle_counts.columns
+                and y_col in cycle_counts.columns
+                and cycle_counts[y_col].notnull().any()
+            ):
+                fig6 = px.bar(
+                    cycle_counts,
+                    x="placement_cycle_id",
+                    y=y_col,
+                    text=y_col,
+                    color_discrete_sequence=px.colors.qualitative.Prism
+                )
+                fig6.update_layout(
+                    xaxis_title="Placement Cycle",
+                    yaxis_title="Number of Applications" if not show_cycle_pct else "Percentage (%)",
+                    showlegend=False
+                )
+                fig6.update_traces(
+                    texttemplate='%{text}' + ('' if not show_cycle_pct else '%'),
+                    textposition='outside'
+                )
+                st.plotly_chart(fig6, use_container_width=True)
+            else:
+                st.info("No data available for Placement Cycle Bar Chart.")
         elif chart6_type == "Pie":
             fig6 = px.pie(
                 cycle_counts,
