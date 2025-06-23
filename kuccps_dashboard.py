@@ -275,6 +275,23 @@ with st.container():
             .reset_index()
             .rename(columns={"index": "department", "department": "count"})
         )
+        # Ensure unique column names (avoid duplicate 'department')
+        if dept_counts.columns.duplicated().any():
+            cols = []
+            seen = set()
+            for c in dept_counts.columns:
+                if c in seen:
+                    i = 1
+                    new_c = f"{c}_{i}"
+                    while new_c in seen:
+                        i += 1
+                        new_c = f"{c}_{i}"
+                    cols.append(new_c)
+                    seen.add(new_c)
+                else:
+                    cols.append(c)
+                    seen.add(c)
+            dept_counts.columns = cols
         # Optionally, show as percentage
         show_dept_pct = st.checkbox("Show as Percentage (Department)", value=False, key="department_pct")
         if show_dept_pct:
