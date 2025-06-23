@@ -257,103 +257,135 @@ with st.container():
         )
 
     # ===== VISUALIZATIONS =====
-    # ========== Chart 1: Programme Department Breakdown (Enhanced) ==========
+    # ========== Chart 1: Programme Department Breakdown (Advanced) ==========
     st.subheader("🧭 Programme Department Breakdown")
 
     if uploaded_file is not None and "department" in filtered_df.columns:
-        # Allow user to choose chart type
+        # Allow user to choose chart type and sorting
         chart1_type = st.radio(
             "Select Chart Type for Department Breakdown:",
-            options=["Pie", "Bar"],
+            options=["Pie", "Bar", "Treemap"],
             horizontal=True,
             key="department_chart_type"
         )
+
+        # Option to group small departments into "Other"
+        group_small = st.checkbox("Group Small Departments as 'Other'", value=True, key="group_small_dept")
+        min_count = st.number_input(
+            "Minimum Applications for Department to Show (others grouped as 'Other')",
+            min_value=1,
+            max_value=100,
+            value=5,
+            step=1,
+            key="min_dept_count"
+        ) if group_small else 1
 
         dept_counts = (
             filtered_df["department"]
             .value_counts(dropna=False)
             .reset_index()
-            .rename(columns={"index": "department", "department": "count"})
         )
-        # Ensure unique column names (avoid duplicate 'department')
-        if dept_counts.columns.duplicated().any():
-            cols = []
-            seen = set()
-            for c in dept_counts.columns:
-                if c in seen:
-                    i = 1
-                    new_c = f"{c}_{i}"
-                    while new_c in seen:
-                        i += 1
-                        new_c = f"{c}_{i}"
-                    cols.append(new_c)
-                    seen.add(new_c)
-                else:
-                    cols.append(c)
-                    seen.add(c)
-            dept_counts.columns = cols
+        dept_counts.columns = ["department", "count"]
+
+        # Remove rows with missing or empty department names for plotting
+        dept_counts = dept_counts[dept_counts["department"].notnull() & (dept_counts["department"] != "")]
+
+        # Group small departments
+        if group_small and not dept_counts.empty:
+            mask = dept_counts["count"] < min_count
+            if mask.any():
+                other_count = dept_counts.loc[mask, "count"].sum()
+                dept_counts = dept_counts.loc[~mask]
+                dept_counts = pd.concat([
+                    dept_counts,
+                    pd.DataFrame([{"department": "Other", "count": other_count}])
+                ], ignore_index=True)
+            dept_counts = dept_counts.sort_values("count", ascending=False).reset_index(drop=True)
+
         # Optionally, show as percentage
         show_dept_pct = st.checkbox("Show as Percentage (Department)", value=False, key="department_pct")
         if show_dept_pct:
             total_dept = dept_counts["count"].sum()
-            # Avoid division by zero
-            if total_dept == 0:
-                dept_counts["percentage"] = 0
-            else:
-                dept_counts["percentage"] = (dept_counts["count"] / total_dept * 100).round(2)
+            dept_counts["percentage"] = (dept_counts["count"] / total_dept * 100).round(2) if total_dept else 0
 
-        if chart1_type == "Pie":
-            fig1 = px.pie(
-            dept_counts,
-            names="department",
-            values="count" if not show_dept_pct else "percentage",
-            hole=0.5,
-            color_discrete_sequence=px.colors.sequential.RdBu,
-            )
-            fig1.update_traces(
-            textinfo="percent+label" if not show_dept_pct else "label+value",
-            pull=[0.05]*len(dept_counts)
-            )
+        # Option to sort by count or alphabetically
+        sort_by = st.radio(
+            "Sort Departments By:",
+            options=["Count (Descending)", "Alphabetical"],
+            horizontal=True,
+            key="dept_sort"
+        )
+        if sort_by == "Count (Descending)":
+            dept_counts = dept_counts.sort_values("count", ascending=False)
         else:
-            fig1 = px.bar(
-            dept_counts,
-            x="department",
-            y="count" if not show_dept_pct else "percentage",
-            text="count" if not show_dept_pct else "percentage",
-            color="department",
-            color_discrete_sequence=px.colors.sequential.RdBu,
-            )
-            fig1.update_layout(
-            xaxis_title="Department",
-            yaxis_title="Number of Applications" if not show_dept_pct else "Percentage (%)",
-            showlegend=False,
-            xaxis_tickangle=-30,
-            margin=dict(b=120),
-            height=500,
-            )
-            fig1.update_traces(
-            texttemplate='%{text}' + ('' if not show_dept_pct else '%'),
-            textposition='outside'
-            )
+            dept_counts = dept_counts.sort_values("department")
 
-        st.plotly_chart(fig1, use_container_width=True)
+        if dept_counts.empty or (show_dept_pct and "percentage" not in dept_counts.columns):
+            st.info("No department data available to display.")
+        else:
+            if chart1_type == "Pie":
+                fig1 = px.pie(
+                    dept_counts,
+                    names="department",
+                    values="count" if not show_dept_pct else "percentage",
+                    hole=0.5,
+                    color_discrete_sequence=px.colors.sequential.RdBu,
+                )
+                fig1.update_traces(
+                    textinfo="percent+label" if not show_dept_pct else "label+value",
+                    pull=[0.05]*len(dept_counts)
+                )
+            elif chart1_type == "Treemap":
+                fig1 = px.treemap(
+                    dept_counts,
+                    path=["department"],
+                    values="count" if not show_dept_pct else "percentage",
+                    color="count" if not show_dept_pct else "percentage",
+                    color_continuous_scale=px.colors.sequential.RdBu,
+                )
+                fig1.update_traces(
+                    texttemplate='%{label}<br>%{value}' + ('' if not show_dept_pct else '%')
+                )
+            else:
+                fig1 = px.bar(
+                    dept_counts,
+                    x="department",
+                    y="count" if not show_dept_pct else "percentage",
+                    text="count" if not show_dept_pct else "percentage",
+                    color="department",
+                    color_discrete_sequence=px.colors.sequential.RdBu,
+                )
+                fig1.update_layout(
+                    xaxis_title="Department",
+                    yaxis_title="Number of Applications" if not show_dept_pct else "Percentage (%)",
+                    showlegend=False,
+                    xaxis_tickangle=-30,
+                    margin=dict(b=120),
+                    height=500,
+                )
+                fig1.update_traces(
+                    texttemplate='%{text}' + ('' if not show_dept_pct else '%'),
+                    textposition='outside'
+                )
 
-        # Show table of department counts
-        st.markdown("#### 📋 Department Breakdown Table")
-        st.dataframe(dept_counts, use_container_width=True)
+            st.plotly_chart(fig1, use_container_width=True)
 
-        # Download button for Chart 1 (using HTML export as fallback)
-        try:
-            img_html1 = pio.to_html(fig1, full_html=False, include_plotlyjs='cdn')
-            st.download_button(
-                "📥 Download Programme Breakdown (HTML)", 
-                img_html1, 
-                "programme_department_breakdown.html", 
-                "text/html"
-            )
-            st.info("PNG export requires 'kaleido', which may not work on Streamlit Cloud. Use the HTML download instead.")
-        except Exception as e:
-            st.warning("⚠️ Unable to export image. Please try downloading as HTML.")
+            # Show table of department counts
+            st.markdown("#### 📋 Department Breakdown Table")
+            st.dataframe(dept_counts, use_container_width=True)
+
+            # Download button for Chart 1 (using HTML export as fallback)
+            try:
+                img_html1 = pio.to_html(fig1, full_html=False, include_plotlyjs='cdn')
+                st.download_button(
+                    "📥 Download Programme Breakdown (HTML)", 
+                    img_html1, 
+                    "programme_department_breakdown.html", 
+                    "text/html"
+                )
+                st.info("PNG export requires 'kaleido', which may not work on Streamlit Cloud. Use the HTML download instead.")
+            except Exception as e:
+                st.warning("⚠️ Unable to export image. Please try downloading as HTML.")
     else:
         st.warning("⚠️ 'department' column not found.")
 
