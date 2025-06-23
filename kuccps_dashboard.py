@@ -765,56 +765,59 @@ with st.container():
         # ===== ENHANCED SUMMARY TABLE =====
         st.subheader("📋 Summary Table of Filtered Data")
 
-        # Option to select columns to display
-        all_columns = filtered_df.columns.tolist()
-        default_cols = [col for col in [
+        # Defensive check: ensure filtered_df exists and is a DataFrame
+        if 'filtered_df' in locals() and hasattr(filtered_df, "columns"):
+            all_columns = filtered_df.columns.tolist()
+            default_cols = [col for col in [
             "number_student_id", "institution_name", "programme_name", "department", "mean_grade_id", "application_day"
-        ] if col in all_columns]
-        selected_columns = st.multiselect(
+            ] if col in all_columns]
+            selected_columns = st.multiselect(
             "Select columns to display in the summary table:",
             options=all_columns,
             default=default_cols if default_cols else all_columns
-        )
+            )
 
-        # Option to set number of rows to show
-        max_rows = min(200, len(filtered_df))
-        num_rows = st.slider(
+            # Option to set number of rows to show
+            max_rows = min(200, len(filtered_df))
+            num_rows = st.slider(
             "Number of rows to display:",
             min_value=5,
             max_value=max_rows if max_rows > 5 else 5,
             value=min(50, max_rows),
             step=5
-        )
+            )
 
-        # Show summary stats above table
-        st.markdown(f"**Total Rows (after filtering):** {len(filtered_df):,}")
-        st.markdown(f"**Columns Displayed:** {', '.join(selected_columns)}")
+            # Show summary stats above table
+            st.markdown(f"**Total Rows (after filtering):** {len(filtered_df):,}")
+            st.markdown(f"**Columns Displayed:** {', '.join(selected_columns)}")
 
-        # Display the table
-        if not filtered_df.empty and selected_columns:
-            st.dataframe(filtered_df[selected_columns].head(num_rows), use_container_width=True)
+            # Display the table
+            if not filtered_df.empty and selected_columns:
+                st.dataframe(filtered_df[selected_columns].head(num_rows), use_container_width=True)
+            else:
+                st.info("No data available to display in the summary table.")
+
+            # Download button for summary table as CSV
+            if not filtered_df.empty and selected_columns:
+                csv_summary = filtered_df[selected_columns].to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="⬇️ Download Summary Table as CSV",
+                    data=csv_summary,
+                    file_name="summary_table.csv",
+                    mime="text/csv"
+                )
+
+            # ===== DOWNLOAD OPTION =====
+            if not filtered_df.empty:
+                csv = filtered_df.to_csv(index=False).encode('utf-8')
+                st.download_button(
+                    label="⬇️ Download Filtered Data as CSV",
+                    data=csv,
+                    file_name="filtered_kuccps_data.csv",
+                    mime="text/csv"
+                )
         else:
-            st.info("No data available to display in the summary table.")
-
-        # Download button for summary table as CSV
-        if not filtered_df.empty and selected_columns:
-            csv_summary = filtered_df[selected_columns].to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="⬇️ Download Summary Table as CSV",
-                data=csv_summary,
-                file_name="summary_table.csv",
-                mime="text/csv"
-            )
-
-        # ===== DOWNLOAD OPTION =====
-        if not filtered_df.empty:
-            csv = filtered_df.to_csv(index=False).encode('utf-8')
-            st.download_button(
-                label="⬇️ Download Filtered Data as CSV",
-                data=csv,
-                file_name="filtered_kuccps_data.csv",
-                mime="text/csv"
-            )
+            st.info("No filtered data available to display in the summary table.")
 
     # ===== Additional Visualizations =====
 
