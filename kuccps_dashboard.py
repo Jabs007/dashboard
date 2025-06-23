@@ -691,42 +691,47 @@ with st.container():
         st.subheader("📌 Summary Insights (Filtered View)")
 
         # Robust KPI calculations with null/empty checks
-        total_students = (
-            filtered_df["number_student_id"].nunique()
-            if "filtered_df" in locals() and hasattr(filtered_df, "columns") and "number_student_id" in filtered_df.columns and not filtered_df["number_student_id"].isna().all()
-            else 0
-        )
-        total_institutions = (
-            hasattr(filtered_df, "columns") and
-            "institution_name" in filtered_df.columns and
-            not filtered_df["institution_name"].isna().all()
-        )
-        if total_institutions:
-            total_institutions = filtered_df["institution_name"].nunique()
+        if "filtered_df" in locals() and hasattr(filtered_df, "columns"):
+            total_students = (
+                filtered_df["number_student_id"].nunique()
+                if "number_student_id" in filtered_df.columns and not filtered_df["number_student_id"].isna().all()
+                else 0
+            )
+            total_institutions = (
+                filtered_df["institution_name"].nunique()
+                if "institution_name" in filtered_df.columns and not filtered_df["institution_name"].isna().all()
+                else 0
+            )
+            total_programmes = (
+                filtered_df["programme_name"].nunique()
+                if "programme_name" in filtered_df.columns and not filtered_df["programme_name"].isna().all()
+                else 0
+            )
+            mode_day = filtered_df['application_day'].mode() if "application_day" in filtered_df.columns and not filtered_df["application_day"].isna().all() and not filtered_df.empty else []
+            top_day = f"Day {int(mode_day[0])}" if len(mode_day) > 0 else "N/A"
+            top_department = (
+                filtered_df["department"].value_counts().idxmax()
+                if ("department" in filtered_df.columns and not filtered_df["department"].isna().all() and not filtered_df.empty)
+                else "N/A"
+            )
+            if "programme_name" in filtered_df.columns and "number_student_id" in filtered_df.columns and not filtered_df.empty:
+                programme_group = filtered_df.groupby("programme_name")["number_student_id"].nunique()
+                avg_students_per_programme = programme_group.mean() if len(programme_group) > 0 else 0
+            else:
+                avg_students_per_programme = 0
+            top_institution = (
+                filtered_df["institution_name"].dropna().value_counts().idxmax()
+                if "institution_name" in filtered_df.columns and not filtered_df["institution_name"].isna().all() and not filtered_df["institution_name"].dropna().empty and not filtered_df.empty
+                else "N/A"
+            )
         else:
+            total_students = 0
             total_institutions = 0
-        total_programmes = (
-            filtered_df["programme_name"].nunique()
-            if "programme_name" in filtered_df.columns and not filtered_df["programme_name"].isna().all()
-            else 0
-        )
-        mode_day = filtered_df['application_day'].mode() if "application_day" in filtered_df.columns and not filtered_df["application_day"].isna().all() and not filtered_df.empty else []
-        top_day = f"Day {int(mode_day[0])}" if len(mode_day) > 0 else "N/A"
-        top_department = (
-            filtered_df["department"].value_counts().idxmax()
-            if ("department" in filtered_df.columns and not filtered_df["department"].isna().all() and not filtered_df.empty)
-            else "N/A"
-        )
-        if "programme_name" in filtered_df.columns and "number_student_id" in filtered_df.columns and not filtered_df.empty:
-            programme_group = filtered_df.groupby("programme_name")["number_student_id"].nunique()
-            avg_students_per_programme = programme_group.mean() if len(programme_group) > 0 else 0
-        else:
+            total_programmes = 0
+            top_day = "N/A"
+            top_department = "N/A"
             avg_students_per_programme = 0
-        top_institution = (
-            filtered_df["institution_name"].dropna().value_counts().idxmax()
-            if "institution_name" in filtered_df.columns and not filtered_df["institution_name"].isna().all() and not filtered_df["institution_name"].dropna().empty and not filtered_df.empty
-            else "N/A"
-        )
+            top_institution = "N/A"
 
         # Display KPIs in a visually appealing layout
         col1, col2, col3, col4 = st.columns(4)
