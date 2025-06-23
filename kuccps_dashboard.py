@@ -985,16 +985,23 @@ with st.container():
     else:
         st.warning("⚠️ 'mean_grade_id' column not found or contains only missing values.")
 
-    # Chart 6: Applications by Placement Cycle (Enhanced)
-    st.subheader("🔄 Applications by Placement Cycle")
+    # Chart 6: Applications by Placement Cycle (Advanced Alternative)
+    st.subheader("🔄 Applications by Placement Cycle (Advanced)")
     if 'filtered_df' in locals() and "placement_cycle_id" in filtered_df.columns and not filtered_df["placement_cycle_id"].isna().all():
         chart6_type = st.radio(
             "Select Chart Type for Placement Cycle:",
-            options=["Bar", "Pie"],
+            options=["Bar", "Pie", "Sunburst", "Heatmap"],
             horizontal=True,
             key="placement_cycle_chart_type"
         )
 
+        # Prepare counts by placement cycle and optionally by department
+        cycle_dept_counts = (
+            filtered_df.groupby(["placement_cycle_id", "department"])["number_student_id"]
+            .nunique()
+            .reset_index()
+            .rename(columns={"number_student_id": "student_count"})
+        )
         cycle_counts = (
             filtered_df["placement_cycle_id"]
             .value_counts(dropna=False)
@@ -1007,6 +1014,11 @@ with st.container():
         if show_cycle_pct:
             total_cycle = cycle_counts["application_count"].sum()
             cycle_counts["percentage"] = (cycle_counts["application_count"] / total_cycle * 100).round(2)
+            cycle_dept_counts = cycle_dept_counts.merge(
+                cycle_counts[["placement_cycle_id", "percentage"]],
+                on="placement_cycle_id",
+                how="left"
+            )
 
         if chart6_type == "Bar":
             fig6 = px.bar(
@@ -1026,7 +1038,7 @@ with st.container():
                 textposition='outside'
             )
             st.plotly_chart(fig6, use_container_width=True)
-        else:
+        elif chart6_type == "Pie":
             fig6 = px.pie(
                 cycle_counts,
                 names="placement_cycle_id",
@@ -1037,6 +1049,34 @@ with st.container():
             fig6.update_traces(
                 textinfo="percent+label" if not show_cycle_pct else "label+value",
                 pull=[0.05]*len(cycle_counts)
+            )
+            st.plotly_chart(fig6, use_container_width=True)
+        elif chart6_type == "Sunburst":
+            # Sunburst: Placement Cycle > Department
+            fig6 = px.sunburst(
+                cycle_dept_counts,
+                path=["placement_cycle_id", "department"],
+                values="student_count",
+                color="placement_cycle_id",
+                color_discrete_sequence=px.colors.qualitative.Prism,
+                title="Applications by Placement Cycle and Department"
+            )
+            st.plotly_chart(fig6, use_container_width=True)
+        else:  # Heatmap
+            # Pivot for heatmap: Placement Cycle x Department
+            heatmap_data = cycle_dept_counts.pivot(index="department", columns="placement_cycle_id", values="student_count").fillna(0)
+            fig6 = px.imshow(
+                heatmap_data,
+                labels=dict(x="Placement Cycle", y="Department", color="Student Count"),
+                color_continuous_scale="Plasma",
+                aspect="auto",
+                text_auto=True
+            )
+            fig6.update_layout(
+                title="Applications Heatmap: Placement Cycle vs Department",
+                xaxis_title="Placement Cycle",
+                yaxis_title="Department",
+                height=500
             )
             st.plotly_chart(fig6, use_container_width=True)
 
@@ -1057,8 +1097,8 @@ with st.container():
     else:
         st.warning("⚠️ 'placement_cycle_id' column not found or contains only missing values.")
 
-    # Chart 7: Top Institutions by Student Count (Advanced)
-    st.subheader("🏆 Top Institutions by Student Count")
+    # Chart 7: Top Institutions by Student Count (Advanced Alternative)
+    st.subheader("🏆 Top Institutions by Student Count (Advanced)")
     if (
         'filtered_df' in locals()
         and "institution_name" in filtered_df.columns
@@ -1100,7 +1140,33 @@ with st.container():
                 .head(top_n_institutions)
             )
         show_dept_breakdown = st.checkbox("Show Department Breakdown", value=False, key="inst_dept_breakdown")
-        if show_dept_breakdown and "department" in filtered_df.columns:
+        show_sunburst = st.checkbox("Show Sunburst (Institution > Department)", value=False, key="inst_sunburst")
+        if show_sunburst and "department" in filtered_df.columns:
+            # Sunburst: Institution > Department
+            inst_dept_counts = (
+                filtered_df[filtered_df["institution_name"].isin(top_institutions["institution_name"])]
+                .groupby(["institution_name", "department"])[
+                    "number_student_id" if agg_mode == "Unique Students" else "number_student_id"
+                ]
+                .nunique() if agg_mode == "Unique Students" else
+                filtered_df[filtered_df["institution_name"].isin(top_institutions["institution_name"])]
+                .groupby(["institution_name", "department"])["number_student_id"]
+                .count()
+            )
+            inst_dept_counts = inst_dept_counts.reset_index().rename(
+                columns={"number_student_id": "student_count"} if agg_mode == "Unique Students" else {"number_student_id": "application_count"}
+            )
+            y_col = "student_count" if agg_mode == "Unique Students" else "application_count"
+            fig7 = px.sunburst(
+                inst_dept_counts,
+                path=["institution_name", "department"],
+                values=y_col,
+                color="institution_name",
+                color_discrete_sequence=px.colors.qualitative.Bold,
+                title="Institution & Department Breakdown"
+            )
+            st.plotly_chart(fig7, use_container_width=True)
+        elif show_dept_breakdown and "department" in filtered_df.columns:
             inst_dept_counts = (
                 filtered_df[filtered_df["institution_name"].isin(top_institutions["institution_name"])]
                 .groupby(["institution_name", "department"])[
@@ -1133,6 +1199,7 @@ with st.container():
                 height=500,
             )
             fig7.update_traces(texttemplate='%{text:,}', textposition='outside')
+            st.plotly_chart(fig7, use_container_width=True)
         else:
             y_col = "student_count" if agg_mode == "Unique Students" else "application_count"
             fig7 = px.bar(
@@ -1152,7 +1219,7 @@ with st.container():
                 height=500,
             )
             fig7.update_traces(texttemplate='%{text:,}', textposition='outside')
-        st.plotly_chart(fig7, use_container_width=True)
+            st.plotly_chart(fig7, use_container_width=True)
         st.markdown("#### 📋 Top Institutions Table")
         st.dataframe(top_institutions, use_container_width=True)
         # Add download for both CSV and HTML
