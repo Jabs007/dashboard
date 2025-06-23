@@ -699,7 +699,7 @@ with st.container():
             )
             total_institutions = (
                 filtered_df["institution_name"].nunique()
-                if "institution_name" in filtered_df.columns and not filtered_df["institution_name"].isna().all() and not filtered_df.empty
+                if "institution_name" in filtered_df.columns and not filtered_df["institution_name"].isna().all() and filtered_df["institution_name"].dropna().size > 0 and not filtered_df.empty
                 else 0
             )
             total_programmes = (
@@ -721,7 +721,7 @@ with st.container():
                 avg_students_per_programme = 0
             top_institution = (
                 filtered_df["institution_name"].dropna().value_counts().idxmax()
-                if "institution_name" in filtered_df.columns and not filtered_df["institution_name"].isna().all() and not filtered_df["institution_name"].dropna().empty and not filtered_df.empty
+                if "institution_name" in filtered_df.columns and not filtered_df["institution_name"].isna().all() and filtered_df["institution_name"].dropna().size > 0 and not filtered_df.empty
                 else "N/A"
             )
         else:
