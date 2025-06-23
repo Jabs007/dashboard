@@ -1,5 +1,7 @@
-streamlit
-pandas
-plotly
-openpyxl
-kaleido
+streamlit>=1.33.0
+pandas>=2.0.0
+plotly>=5.20.0
+kaleido>=0.2.1
+openpyxl>=3.1.0      # For reading/writing .xlsx files
+xlrd>=2.0.1           # For reading legacy .xls files
+pyxlsb>=1.0.9         # For reading binary Excel files (.xlsb), if needed
