@@ -693,7 +693,7 @@ with st.container():
         # Robust KPI calculations with null/empty checks
         total_students = (
             filtered_df["number_student_id"].nunique()
-            if "number_student_id" in filtered_df.columns and not filtered_df["number_student_id"].isna().all()
+            if hasattr(filtered_df, "columns") and "number_student_id" in filtered_df.columns and not filtered_df["number_student_id"].isna().all()
             else 0
         )
         total_institutions = (
